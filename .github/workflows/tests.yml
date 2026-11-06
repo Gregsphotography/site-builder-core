@@ -25,6 +25,7 @@ jobs:
       DB_HOST: 127.0.0.1
       DB_USERNAME: root
       DB_PASSWORD: testing
+      SITE_BUILDER_EXCHANGE_TARGET_DATABASE: ${{ matrix.database == 'mysql' && 'site_builder_package_graph_target_test' || '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -38,6 +39,27 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version: '24'
+      - name: Prepare disposable MySQL graph target
+        if: matrix.database == 'mysql'
+        timeout-minutes: 1
+        run: |
+          php <<'PHP'
+          <?php
+          if (getenv('GITHUB_ACTIONS') !== 'true'
+              || getenv('DB_CONNECTION') !== 'mysql'
+              || getenv('DB_HOST') !== '127.0.0.1'
+              || getenv('DB_DATABASE') !== 'site_builder_package_test'
+              || getenv('SITE_BUILDER_EXCHANGE_TARGET_DATABASE') !== 'site_builder_package_graph_target_test'
+              || getenv('DB_USERNAME') !== 'root'
+              || getenv('DB_PASSWORD') !== 'testing') {
+              throw new RuntimeException('Refusing non-disposable CI MySQL configuration.');
+          }
+          $connection = new PDO('mysql:host=127.0.0.1;port=3306', 'root', 'testing', [
+              PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+              PDO::ATTR_TIMEOUT => 5,
+          ]);
+          $connection->exec('CREATE DATABASE `site_builder_package_graph_target_test` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+          PHP
       - run: php tools/dependencies.php ${{ matrix.dependencies }}
       - run: composer validate --strict
       - run: npm ci --ignore-scripts --no-fund --no-audit
