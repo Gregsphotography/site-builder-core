@@ -1,0 +1,9 @@
+# Upgrade from private distribution
+
+Back up application code, database and media coherently; retain the exact old proprietary archives. New package names are gregsphotography/site-builder-*; PHP namespaces, table names, component IDs and stored content formats remain unchanged.
+
+In a disposable rehearsal, remove old `p2data/site-builder-*` root requirements with `composer remove ... --no-update`, add all selected new names at 0.3.0-rc.8 with `composer require ... --no-update`, then resolve the reviewed names/dependencies together. Preserve unrelated repositories and locks. Narrowly remove/exclude only old builder names from canonical private artifact repositories that shadow the new selection. New packages conflict with the corresponding old names to prevent duplicate namespace installation.
+
+After resolving the new packages in a disposable copy, run `php artisan site-builder:canonical-check --json` before deployment. This read-only preflight checks registered content JSON; exit 1 means affected rows require explicit review, and exit 2 means runtime/schema inspection is unavailable. Keep its row-location report private. Never deploy over an affected host or rehash historical state automatically. See [numeric compatibility](canonicalization.md).
+
+Review migration identities and assets; never overwrite authored config/policies. Matching legacy files remain unowned until an operator performs a separately reviewed adoption. Run guided plan/doctor, explicitly publish/run selected migrations, rebuild caches and verify real owner workflows and public gallery assets. New block content may be unreadable by old packages even with unchanged document version: do not promise in-place downgrade. A coherent pre-upgrade backup is the supported rollback; later edits are not contained in that earlier backup. No original application or production cutover is part of this package release.

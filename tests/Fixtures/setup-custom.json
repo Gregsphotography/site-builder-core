@@ -1,0 +1,53 @@
+{
+    "format": "laravel-site-builder/setup-answers",
+    "version": 1,
+    "profile": "custom",
+    "application": "existing",
+    "locales": {
+        "en": {
+            "label": "English",
+            "dir": "ltr"
+        },
+        "de": {
+            "label": "Deutsch",
+            "dir": "ltr"
+        }
+    },
+    "routes": {
+        "enabled": true,
+        "prefix": "builder",
+        "previewPrefix": "_site-builder/preview"
+    },
+    "presentation": {
+        "mode": "host",
+        "layout": "host.builder"
+    },
+    "features": {
+        "media": false,
+        "savedSections": false,
+        "clipboard": false,
+        "history": false,
+        "siteParts": false,
+        "sampleDraft": false
+    },
+    "authorization": {
+        "mode": "existing",
+        "guard": "staff",
+        "actorAlias": null,
+        "actorKeys": [],
+        "pageAbilities": [],
+        "sitePartAbilities": {},
+        "mediaAbilities": []
+    },
+    "registration": {
+        "mode": "manual",
+        "panelId": null,
+        "panelFile": null
+    },
+    "storage": {
+        "mode": "disabled",
+        "disk": null,
+        "createLink": false
+    },
+    "migrations": "publish"
+}

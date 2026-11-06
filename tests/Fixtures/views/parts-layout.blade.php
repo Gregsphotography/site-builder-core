@@ -1,0 +1,1 @@
+<!doctype html><html lang="{{ $locale }}"><head><meta charset="utf-8"></head><body><header>{{ $headerSlot ?? 'Host header' }}</header><main>{{ $slot }}</main><footer>{{ $footerSlot ?? 'Host footer' }}</footer></body></html>

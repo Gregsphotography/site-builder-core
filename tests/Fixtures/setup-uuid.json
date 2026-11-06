@@ -1,0 +1,70 @@
+{
+    "format": "laravel-site-builder/setup-answers",
+    "version": 1,
+    "profile": "editor",
+    "application": "existing",
+    "locales": {
+        "en": {
+            "label": "English",
+            "dir": "ltr"
+        },
+        "de": {
+            "label": "Deutsch",
+            "dir": "ltr"
+        }
+    },
+    "routes": {
+        "enabled": true,
+        "prefix": "builder",
+        "previewPrefix": "_site-builder/preview"
+    },
+    "presentation": {
+        "mode": "preset",
+        "layout": "components.minimal"
+    },
+    "features": {
+        "media": true,
+        "savedSections": true,
+        "clipboard": true,
+        "history": true,
+        "siteParts": true,
+        "sampleDraft": false
+    },
+    "authorization": {
+        "mode": "allowlist",
+        "guard": "staff",
+        "actorAlias": "staff",
+        "actorKeys": [
+            "00000000-0000-4000-8000-000000000099"
+        ],
+        "pageAbilities": [
+            "view",
+            "create",
+            "update",
+            "preview",
+            "publish"
+        ],
+        "sitePartAbilities": {
+            "header": [
+                "view",
+                "create",
+                "update",
+                "preview",
+                "publish",
+                "use"
+            ]
+        },
+        "mediaAbilities": []
+    },
+    "registration": {
+        "mode": "provider-stub",
+        "panelId": "admin",
+        "panelFile": "app/Providers/Filament/AdminPanelProvider.php"
+    },
+    "storage": {
+        "mode": "local-public",
+        "disk": "public",
+        "createLink": false
+    },
+    "migrations": "publish"
+}

@@ -1,0 +1,215 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:laravel-site-builder:design:setup-receipt:1",
+  "type": "object",
+  "properties": {
+    "format": {
+      "const": "laravel-site-builder/setup-receipt"
+    },
+    "version": {
+      "const": 1
+    },
+    "runId": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+    },
+    "planDigest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "answersDigest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "status": {
+      "enum": [
+        "complete",
+        "partial"
+      ]
+    },
+    "readiness": {
+      "enum": [
+        "ready",
+        "needs-action",
+        "unavailable"
+      ]
+    },
+    "packages": {
+      "type": "object",
+      "properties": {
+        "core": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "components": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "filament": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "core"
+      ]
+    },
+    "outcomes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+          },
+          "status": {
+            "enum": [
+              "applied",
+              "unchanged",
+              "pending",
+              "failed"
+            ]
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255,
+                "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\)[A-Za-z0-9._/-]+$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "beforeHash": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "afterHash": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "status",
+          "path",
+          "beforeHash",
+          "afterHash",
+          "code"
+        ]
+      },
+      "maxItems": 5000
+    },
+    "nextActions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "message"
+        ]
+      },
+      "maxItems": 100
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "version",
+    "runId",
+    "planDigest",
+    "answersDigest",
+    "status",
+    "readiness",
+    "packages",
+    "outcomes",
+    "nextActions"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "complete"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "outcomes": {
+            "items": {
+              "properties": {
+                "status": {
+                  "enum": [
+                    "applied",
+                    "unchanged"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "outcomes": {
+            "contains": {
+              "properties": {
+                "status": {
+                  "enum": [
+                    "failed",
+                    "pending"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

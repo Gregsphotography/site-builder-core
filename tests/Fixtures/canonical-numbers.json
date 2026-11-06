@@ -1,0 +1,1192 @@
+[
+    {
+        "input": "0",
+        "canonical": "0",
+        "rejected": false
+    },
+    {
+        "input": "-0.0",
+        "canonical": "0",
+        "rejected": false
+    },
+    {
+        "input": "1.0",
+        "canonical": "1",
+        "rejected": false
+    },
+    {
+        "input": "10.0",
+        "canonical": "10",
+        "rejected": true
+    },
+    {
+        "input": "-100.0",
+        "canonical": "-100",
+        "rejected": true
+    },
+    {
+        "input": "1e20",
+        "canonical": "100000000000000000000",
+        "rejected": true
+    },
+    {
+        "input": "1.234567891",
+        "canonical": "1.234567891",
+        "rejected": true
+    },
+    {
+        "input": "1.234567891e-27",
+        "canonical": "1.234567891e-27",
+        "rejected": true
+    },
+    {
+        "input": "100000000000000.1",
+        "canonical": "100000000000000.1",
+        "rejected": true
+    },
+    {
+        "input": "1.25",
+        "canonical": "1.25",
+        "rejected": false
+    },
+    {
+        "input": "1e-7",
+        "canonical": "1e-7",
+        "rejected": false
+    },
+    {
+        "input": "1e-6",
+        "canonical": "0.000001",
+        "rejected": false
+    },
+    {
+        "input": "1e-27",
+        "canonical": "1e-27",
+        "rejected": false
+    },
+    {
+        "input": "1e21",
+        "canonical": "1e+21",
+        "rejected": false
+    },
+    {
+        "input": "333333333.3333333",
+        "canonical": "333333333.3333333",
+        "rejected": false
+    },
+    {
+        "input": "9007199254740991",
+        "canonical": "9007199254740991",
+        "rejected": false
+    },
+    {
+        "input": "9007199254740992",
+        "canonical": "9007199254740992",
+        "rejected": true
+    },
+    {
+        "input": "1e400",
+        "canonical": "null",
+        "rejected": true
+    },
+    {
+        "input": "5e-324",
+        "canonical": "5e-324",
+        "rejected": true
+    },
+    {
+        "input": "-5e-324",
+        "canonical": "-5e-324",
+        "rejected": true
+    },
+    {
+        "input": "1.7976931348623157e+308",
+        "canonical": "1.7976931348623157e+308",
+        "rejected": true
+    },
+    {
+        "input": "-1.7976931348623157e+308",
+        "canonical": "-1.7976931348623157e+308",
+        "rejected": true
+    },
+    {
+        "input": "2.9514790517935283e+20",
+        "canonical": "295147905179352830000",
+        "rejected": true
+    },
+    {
+        "input": "9.999999999999997e+22",
+        "canonical": "9.999999999999997e+22",
+        "rejected": true
+    },
+    {
+        "input": "1e+23",
+        "canonical": "1e+23",
+        "rejected": false
+    },
+    {
+        "input": "1.0000000000000001e+23",
+        "canonical": "1.0000000000000001e+23",
+        "rejected": true
+    },
+    {
+        "input": "9.999999999999997e+20",
+        "canonical": "999999999999999700000",
+        "rejected": true
+    },
+    {
+        "input": "9.999999999999999e+20",
+        "canonical": "999999999999999900000",
+        "rejected": true
+    },
+    {
+        "input": "1e+21",
+        "canonical": "1e+21",
+        "rejected": false
+    },
+    {
+        "input": "9.999999999999997e-07",
+        "canonical": "9.999999999999997e-7",
+        "rejected": true
+    },
+    {
+        "input": "1e-06",
+        "canonical": "0.000001",
+        "rejected": false
+    },
+    {
+        "input": "333333333.3333332",
+        "canonical": "333333333.3333332",
+        "rejected": false
+    },
+    {
+        "input": "333333333.33333325",
+        "canonical": "333333333.33333325",
+        "rejected": true
+    },
+    {
+        "input": "333333333.3333333",
+        "canonical": "333333333.3333333",
+        "rejected": false
+    },
+    {
+        "input": "333333333.3333334",
+        "canonical": "333333333.3333334",
+        "rejected": false
+    },
+    {
+        "input": "333333333.33333343",
+        "canonical": "333333333.33333343",
+        "rejected": true
+    },
+    {
+        "input": "-3.3333333333333333e-06",
+        "canonical": "-0.0000033333333333333333",
+        "rejected": true
+    },
+    {
+        "input": "1424953923781206.2",
+        "canonical": "1424953923781206.2",
+        "rejected": true
+    },
+    {
+        "input": "-12157.237973",
+        "canonical": "-12157.237973",
+        "rejected": false
+    },
+    {
+        "input": "-96388.460823",
+        "canonical": "-96388.460823",
+        "rejected": false
+    },
+    {
+        "input": "53035.513310",
+        "canonical": "53035.51331",
+        "rejected": false
+    },
+    {
+        "input": "-17027.652897",
+        "canonical": "-17027.652897",
+        "rejected": false
+    },
+    {
+        "input": "-43983.695382",
+        "canonical": "-43983.695382",
+        "rejected": false
+    },
+    {
+        "input": "-57139.847802",
+        "canonical": "-57139.847802",
+        "rejected": false
+    },
+    {
+        "input": "-21935.120494",
+        "canonical": "-21935.120494",
+        "rejected": false
+    },
+    {
+        "input": "66362.702986",
+        "canonical": "66362.702986",
+        "rejected": false
+    },
+    {
+        "input": "13433.665446",
+        "canonical": "13433.665446",
+        "rejected": false
+    },
+    {
+        "input": "-4581.079169",
+        "canonical": "-4581.079169",
+        "rejected": false
+    },
+    {
+        "input": "-39909.480653",
+        "canonical": "-39909.480653",
+        "rejected": false
+    },
+    {
+        "input": "-41858.908288",
+        "canonical": "-41858.908288",
+        "rejected": false
+    },
+    {
+        "input": "6198.643429",
+        "canonical": "6198.643429",
+        "rejected": false
+    },
+    {
+        "input": "85634.005465",
+        "canonical": "85634.005465",
+        "rejected": false
+    },
+    {
+        "input": "29845.571965",
+        "canonical": "29845.571965",
+        "rejected": false
+    },
+    {
+        "input": "77191.610434",
+        "canonical": "77191.610434",
+        "rejected": false
+    },
+    {
+        "input": "18957.087574",
+        "canonical": "18957.087574",
+        "rejected": false
+    },
+    {
+        "input": "22707.138465",
+        "canonical": "22707.138465",
+        "rejected": false
+    },
+    {
+        "input": "-59203.937324",
+        "canonical": "-59203.937324",
+        "rejected": false
+    },
+    {
+        "input": "-54174.763395",
+        "canonical": "-54174.763395",
+        "rejected": false
+    },
+    {
+        "input": "79832.972068",
+        "canonical": "79832.972068",
+        "rejected": false
+    },
+    {
+        "input": "60856.909435",
+        "canonical": "60856.909435",
+        "rejected": false
+    },
+    {
+        "input": "8488.163441",
+        "canonical": "8488.163441",
+        "rejected": false
+    },
+    {
+        "input": "-68019.661217",
+        "canonical": "-68019.661217",
+        "rejected": false
+    },
+    {
+        "input": "62352.477363",
+        "canonical": "62352.477363",
+        "rejected": false
+    },
+    {
+        "input": "-21485.065216",
+        "canonical": "-21485.065216",
+        "rejected": false
+    },
+    {
+        "input": "83445.341807",
+        "canonical": "83445.341807",
+        "rejected": false
+    },
+    {
+        "input": "13291.139490",
+        "canonical": "13291.13949",
+        "rejected": false
+    },
+    {
+        "input": "-45660.001514",
+        "canonical": "-45660.001514",
+        "rejected": false
+    },
+    {
+        "input": "34628.906606",
+        "canonical": "34628.906606",
+        "rejected": false
+    },
+    {
+        "input": "-26403.240486",
+        "canonical": "-26403.240486",
+        "rejected": false
+    },
+    {
+        "input": "-43640.720947",
+        "canonical": "-43640.720947",
+        "rejected": false
+    },
+    {
+        "input": "-70427.422437",
+        "canonical": "-70427.422437",
+        "rejected": false
+    },
+    {
+        "input": "-41293.905307",
+        "canonical": "-41293.905307",
+        "rejected": false
+    },
+    {
+        "input": "-2161.485192",
+        "canonical": "-2161.485192",
+        "rejected": false
+    },
+    {
+        "input": "-73228.902243",
+        "canonical": "-73228.902243",
+        "rejected": false
+    },
+    {
+        "input": "64285.049704",
+        "canonical": "64285.049704",
+        "rejected": false
+    },
+    {
+        "input": "26520.340490",
+        "canonical": "26520.34049",
+        "rejected": false
+    },
+    {
+        "input": "61213.724610",
+        "canonical": "61213.72461",
+        "rejected": false
+    },
+    {
+        "input": "-9362.646506",
+        "canonical": "-9362.646506",
+        "rejected": false
+    },
+    {
+        "input": "4141.243098",
+        "canonical": "4141.243098",
+        "rejected": false
+    },
+    {
+        "input": "-46550.061660",
+        "canonical": "-46550.06166",
+        "rejected": false
+    },
+    {
+        "input": "-73257.586347",
+        "canonical": "-73257.586347",
+        "rejected": false
+    },
+    {
+        "input": "-33460.447192",
+        "canonical": "-33460.447192",
+        "rejected": false
+    },
+    {
+        "input": "-20463.510454",
+        "canonical": "-20463.510454",
+        "rejected": false
+    },
+    {
+        "input": "50515.115023",
+        "canonical": "50515.115023",
+        "rejected": false
+    },
+    {
+        "input": "34684.038247",
+        "canonical": "34684.038247",
+        "rejected": false
+    },
+    {
+        "input": "-78936.040103",
+        "canonical": "-78936.040103",
+        "rejected": false
+    },
+    {
+        "input": "96875.938319",
+        "canonical": "96875.938319",
+        "rejected": false
+    },
+    {
+        "input": "89279.437717",
+        "canonical": "89279.437717",
+        "rejected": false
+    },
+    {
+        "input": "74396.866973",
+        "canonical": "74396.866973",
+        "rejected": false
+    },
+    {
+        "input": "-80593.324873",
+        "canonical": "-80593.324873",
+        "rejected": false
+    },
+    {
+        "input": "6814.968660",
+        "canonical": "6814.96866",
+        "rejected": false
+    },
+    {
+        "input": "78304.146847",
+        "canonical": "78304.146847",
+        "rejected": false
+    },
+    {
+        "input": "90957.473299",
+        "canonical": "90957.473299",
+        "rejected": false
+    },
+    {
+        "input": "-96898.407532",
+        "canonical": "-96898.407532",
+        "rejected": false
+    },
+    {
+        "input": "93914.220216",
+        "canonical": "93914.220216",
+        "rejected": false
+    },
+    {
+        "input": "35839.065687",
+        "canonical": "35839.065687",
+        "rejected": false
+    },
+    {
+        "input": "-36194.091867",
+        "canonical": "-36194.091867",
+        "rejected": false
+    },
+    {
+        "input": "54003.121862",
+        "canonical": "54003.121862",
+        "rejected": false
+    },
+    {
+        "input": "-48248.730350",
+        "canonical": "-48248.73035",
+        "rejected": false
+    },
+    {
+        "input": "-84438.221054",
+        "canonical": "-84438.221054",
+        "rejected": false
+    },
+    {
+        "input": "-11896.705638",
+        "canonical": "-11896.705638",
+        "rejected": false
+    },
+    {
+        "input": "-7403.828345",
+        "canonical": "-7403.828345",
+        "rejected": false
+    },
+    {
+        "input": "66616.858039",
+        "canonical": "66616.858039",
+        "rejected": false
+    },
+    {
+        "input": "-45245.402252",
+        "canonical": "-45245.402252",
+        "rejected": false
+    },
+    {
+        "input": "20263.990221",
+        "canonical": "20263.990221",
+        "rejected": false
+    },
+    {
+        "input": "15822.410846",
+        "canonical": "15822.410846",
+        "rejected": false
+    },
+    {
+        "input": "-4804.540972",
+        "canonical": "-4804.540972",
+        "rejected": false
+    },
+    {
+        "input": "-30712.093432",
+        "canonical": "-30712.093432",
+        "rejected": false
+    },
+    {
+        "input": "65003.130529",
+        "canonical": "65003.130529",
+        "rejected": false
+    },
+    {
+        "input": "64227.415729",
+        "canonical": "64227.415729",
+        "rejected": false
+    },
+    {
+        "input": "-49871.422513",
+        "canonical": "-49871.422513",
+        "rejected": false
+    },
+    {
+        "input": "-15604.375888",
+        "canonical": "-15604.375888",
+        "rejected": false
+    },
+    {
+        "input": "63579.072938",
+        "canonical": "63579.072938",
+        "rejected": false
+    },
+    {
+        "input": "69425.159102",
+        "canonical": "69425.159102",
+        "rejected": false
+    },
+    {
+        "input": "78238.333595",
+        "canonical": "78238.333595",
+        "rejected": false
+    },
+    {
+        "input": "14012.420589",
+        "canonical": "14012.420589",
+        "rejected": false
+    },
+    {
+        "input": "-22591.769596",
+        "canonical": "-22591.769596",
+        "rejected": false
+    },
+    {
+        "input": "21395.117758",
+        "canonical": "21395.117758",
+        "rejected": false
+    },
+    {
+        "input": "14265.947719",
+        "canonical": "14265.947719",
+        "rejected": false
+    },
+    {
+        "input": "-73356.956733",
+        "canonical": "-73356.956733",
+        "rejected": false
+    },
+    {
+        "input": "-67714.057965",
+        "canonical": "-67714.057965",
+        "rejected": false
+    },
+    {
+        "input": "87010.880499",
+        "canonical": "87010.880499",
+        "rejected": false
+    },
+    {
+        "input": "-15598.779926",
+        "canonical": "-15598.779926",
+        "rejected": false
+    },
+    {
+        "input": "-57501.787051",
+        "canonical": "-57501.787051",
+        "rejected": false
+    },
+    {
+        "input": "-39334.533288",
+        "canonical": "-39334.533288",
+        "rejected": false
+    },
+    {
+        "input": "-38382.691091",
+        "canonical": "-38382.691091",
+        "rejected": false
+    },
+    {
+        "input": "44307.306479",
+        "canonical": "44307.306479",
+        "rejected": false
+    },
+    {
+        "input": "-15187.012294",
+        "canonical": "-15187.012294",
+        "rejected": false
+    },
+    {
+        "input": "-50224.066570",
+        "canonical": "-50224.06657",
+        "rejected": false
+    },
+    {
+        "input": "-15900.529108",
+        "canonical": "-15900.529108",
+        "rejected": false
+    },
+    {
+        "input": "-76001.901690",
+        "canonical": "-76001.90169",
+        "rejected": false
+    },
+    {
+        "input": "27904.772324",
+        "canonical": "27904.772324",
+        "rejected": false
+    },
+    {
+        "input": "64549.889111",
+        "canonical": "64549.889111",
+        "rejected": false
+    },
+    {
+        "input": "30942.504747",
+        "canonical": "30942.504747",
+        "rejected": false
+    },
+    {
+        "input": "1422.456508",
+        "canonical": "1422.456508",
+        "rejected": false
+    },
+    {
+        "input": "72406.929726",
+        "canonical": "72406.929726",
+        "rejected": false
+    },
+    {
+        "input": "-28758.392474",
+        "canonical": "-28758.392474",
+        "rejected": false
+    },
+    {
+        "input": "-40779.730796",
+        "canonical": "-40779.730796",
+        "rejected": false
+    },
+    {
+        "input": "4.8548487114463882e-21",
+        "canonical": "4.854848711446388e-21",
+        "rejected": true
+    },
+    {
+        "input": "-5.7036000708512777e-178",
+        "canonical": "-5.703600070851278e-178",
+        "rejected": true
+    },
+    {
+        "input": "3.9177214662579373e-291",
+        "canonical": "3.917721466257937e-291",
+        "rejected": true
+    },
+    {
+        "input": "9.8502556302155082e-62",
+        "canonical": "9.850255630215508e-62",
+        "rejected": true
+    },
+    {
+        "input": "-3.5402499651771269e-57",
+        "canonical": "-3.540249965177127e-57",
+        "rejected": true
+    },
+    {
+        "input": "-7.6762084151083694e+219",
+        "canonical": "-7.676208415108369e+219",
+        "rejected": true
+    },
+    {
+        "input": "6.2965687346169262e-109",
+        "canonical": "6.296568734616926e-109",
+        "rejected": true
+    },
+    {
+        "input": "7.498246748187508e-269",
+        "canonical": "7.498246748187508e-269",
+        "rejected": true
+    },
+    {
+        "input": "8.186508312036068e-287",
+        "canonical": "8.186508312036068e-287",
+        "rejected": true
+    },
+    {
+        "input": "6.2192507233856137e+97",
+        "canonical": "6.219250723385614e+97",
+        "rejected": true
+    },
+    {
+        "input": "9.1003588842073629e-41",
+        "canonical": "9.100358884207363e-41",
+        "rejected": true
+    },
+    {
+        "input": "-8.9976680332417495e-139",
+        "canonical": "-8.99766803324175e-139",
+        "rejected": true
+    },
+    {
+        "input": "-1.9136069562437186e+182",
+        "canonical": "-1.9136069562437186e+182",
+        "rejected": true
+    },
+    {
+        "input": "-4.8593631402579975e+70",
+        "canonical": "-4.8593631402579975e+70",
+        "rejected": true
+    },
+    {
+        "input": "-8.7813189576405405e-294",
+        "canonical": "-8.78131895764054e-294",
+        "rejected": true
+    },
+    {
+        "input": "-7.9042957618864857e-207",
+        "canonical": "-7.904295761886486e-207",
+        "rejected": true
+    },
+    {
+        "input": "-2.4051822386129373e-231",
+        "canonical": "-2.4051822386129373e-231",
+        "rejected": true
+    },
+    {
+        "input": "-7.4506711711645097e+258",
+        "canonical": "-7.45067117116451e+258",
+        "rejected": true
+    },
+    {
+        "input": "8.9471163881459214e-113",
+        "canonical": "8.947116388145921e-113",
+        "rejected": true
+    },
+    {
+        "input": "4.1840564938684856e+61",
+        "canonical": "4.1840564938684856e+61",
+        "rejected": true
+    },
+    {
+        "input": "1.7637746491513758e+165",
+        "canonical": "1.7637746491513758e+165",
+        "rejected": true
+    },
+    {
+        "input": "9.4087528797581541e-174",
+        "canonical": "9.408752879758154e-174",
+        "rejected": true
+    },
+    {
+        "input": "7.7381776462749128e+182",
+        "canonical": "7.738177646274913e+182",
+        "rejected": true
+    },
+    {
+        "input": "2.4958278690136526e+241",
+        "canonical": "2.4958278690136526e+241",
+        "rejected": true
+    },
+    {
+        "input": "9.9899822717595974e-176",
+        "canonical": "9.989982271759597e-176",
+        "rejected": true
+    },
+    {
+        "input": "-5.5668990693298607e-64",
+        "canonical": "-5.5668990693298607e-64",
+        "rejected": true
+    },
+    {
+        "input": "-6.7826387546709108e-13",
+        "canonical": "-6.782638754670911e-13",
+        "rejected": true
+    },
+    {
+        "input": "2.5137112752575225e+226",
+        "canonical": "2.5137112752575225e+226",
+        "rejected": true
+    },
+    {
+        "input": "-5.5476702257561603e-187",
+        "canonical": "-5.54767022575616e-187",
+        "rejected": true
+    },
+    {
+        "input": "-1.1760868610507132e+20",
+        "canonical": "-117608686105071320000",
+        "rejected": true
+    },
+    {
+        "input": "-1.6828514584972946e-282",
+        "canonical": "-1.6828514584972946e-282",
+        "rejected": true
+    },
+    {
+        "input": "9.2727084737678353e+278",
+        "canonical": "9.272708473767835e+278",
+        "rejected": true
+    },
+    {
+        "input": "-9.9684523961769286e-187",
+        "canonical": "-9.968452396176929e-187",
+        "rejected": true
+    },
+    {
+        "input": "-6.7535932532804039e-218",
+        "canonical": "-6.753593253280404e-218",
+        "rejected": true
+    },
+    {
+        "input": "8.2299395642078063e-102",
+        "canonical": "8.229939564207806e-102",
+        "rejected": true
+    },
+    {
+        "input": "-6.531238996403433e-281",
+        "canonical": "-6.531238996403433e-281",
+        "rejected": true
+    },
+    {
+        "input": "-7.65394444609191e+251",
+        "canonical": "-7.65394444609191e+251",
+        "rejected": true
+    },
+    {
+        "input": "3.4371211425929716e-88",
+        "canonical": "3.4371211425929716e-88",
+        "rejected": true
+    },
+    {
+        "input": "8.1676067623295336e+78",
+        "canonical": "8.167606762329534e+78",
+        "rejected": true
+    },
+    {
+        "input": "-7.9755955715228227e-53",
+        "canonical": "-7.975595571522823e-53",
+        "rejected": true
+    },
+    {
+        "input": "-6.4492127734043957e+269",
+        "canonical": "-6.449212773404396e+269",
+        "rejected": true
+    },
+    {
+        "input": "4.5334142257558804e+120",
+        "canonical": "4.5334142257558804e+120",
+        "rejected": true
+    },
+    {
+        "input": "8.7617802469147962e-101",
+        "canonical": "8.761780246914796e-101",
+        "rejected": true
+    },
+    {
+        "input": "3.7138378651025142e+236",
+        "canonical": "3.713837865102514e+236",
+        "rejected": true
+    },
+    {
+        "input": "-9.9624358924940813e-297",
+        "canonical": "-9.962435892494081e-297",
+        "rejected": true
+    },
+    {
+        "input": "9.4371348456792395e+184",
+        "canonical": "9.43713484567924e+184",
+        "rejected": true
+    },
+    {
+        "input": "-5.732509661450322e+196",
+        "canonical": "-5.732509661450322e+196",
+        "rejected": true
+    },
+    {
+        "input": "7.9624702768962234e+130",
+        "canonical": "7.962470276896223e+130",
+        "rejected": true
+    },
+    {
+        "input": "3.3133973753321407e+120",
+        "canonical": "3.313397375332141e+120",
+        "rejected": true
+    },
+    {
+        "input": "-8.6019083811811552e+205",
+        "canonical": "-8.601908381181155e+205",
+        "rejected": true
+    },
+    {
+        "input": "-9.0186962854401996e+291",
+        "canonical": "-9.0186962854402e+291",
+        "rejected": true
+    },
+    {
+        "input": "-8.7120926182182501e+204",
+        "canonical": "-8.71209261821825e+204",
+        "rejected": true
+    },
+    {
+        "input": "6.9893418978401335e+101",
+        "canonical": "6.989341897840133e+101",
+        "rejected": true
+    },
+    {
+        "input": "6.6882697214949444e-277",
+        "canonical": "6.688269721494944e-277",
+        "rejected": true
+    },
+    {
+        "input": "-1.8205261503673124e-100",
+        "canonical": "-1.8205261503673124e-100",
+        "rejected": true
+    },
+    {
+        "input": "4.7034285134731413e+119",
+        "canonical": "4.703428513473141e+119",
+        "rejected": true
+    },
+    {
+        "input": "-2.9647909524348438e-149",
+        "canonical": "-2.964790952434844e-149",
+        "rejected": true
+    },
+    {
+        "input": "1.1572040036801835e+50",
+        "canonical": "1.1572040036801835e+50",
+        "rejected": true
+    },
+    {
+        "input": "2.0143680152977231e-278",
+        "canonical": "2.014368015297723e-278",
+        "rejected": true
+    },
+    {
+        "input": "9.0839412036647858e-193",
+        "canonical": "9.083941203664786e-193",
+        "rejected": true
+    },
+    {
+        "input": "8.7704181193656973e-166",
+        "canonical": "8.770418119365697e-166",
+        "rejected": true
+    },
+    {
+        "input": "-6.4938639482349711e-202",
+        "canonical": "-6.493863948234971e-202",
+        "rejected": true
+    },
+    {
+        "input": "7.8453905711982486e+167",
+        "canonical": "7.845390571198249e+167",
+        "rejected": true
+    },
+    {
+        "input": "-8.3239249307281242e+103",
+        "canonical": "-8.323924930728124e+103",
+        "rejected": true
+    },
+    {
+        "input": "5.6872365403469556e-276",
+        "canonical": "5.6872365403469556e-276",
+        "rejected": true
+    },
+    {
+        "input": "-9.9970870449043393e-39",
+        "canonical": "-9.997087044904339e-39",
+        "rejected": true
+    },
+    {
+        "input": "2.15862136573592e-41",
+        "canonical": "2.15862136573592e-41",
+        "rejected": true
+    },
+    {
+        "input": "4.9566776158719093e+216",
+        "canonical": "4.956677615871909e+216",
+        "rejected": true
+    },
+    {
+        "input": "2.4165442913891866e+67",
+        "canonical": "2.4165442913891866e+67",
+        "rejected": true
+    },
+    {
+        "input": "-9.2997351775431437e+90",
+        "canonical": "-9.299735177543144e+90",
+        "rejected": true
+    },
+    {
+        "input": "-5.0585861890825702e-210",
+        "canonical": "-5.05858618908257e-210",
+        "rejected": true
+    },
+    {
+        "input": "-2.3372811122309223e+103",
+        "canonical": "-2.3372811122309223e+103",
+        "rejected": true
+    },
+    {
+        "input": "8.8206778594297572e+169",
+        "canonical": "8.820677859429757e+169",
+        "rejected": true
+    },
+    {
+        "input": "6.5672510815464975e-21",
+        "canonical": "6.5672510815464975e-21",
+        "rejected": true
+    },
+    {
+        "input": "3.1945327718013065e-16",
+        "canonical": "3.1945327718013065e-16",
+        "rejected": true
+    },
+    {
+        "input": "-9.7777768951418413e+184",
+        "canonical": "-9.777776895141841e+184",
+        "rejected": true
+    },
+    {
+        "input": "-4.8046365300941859e-164",
+        "canonical": "-4.804636530094186e-164",
+        "rejected": true
+    },
+    {
+        "input": "-2.1813535474948353e-276",
+        "canonical": "-2.1813535474948353e-276",
+        "rejected": true
+    },
+    {
+        "input": "3.7214677370134555e+256",
+        "canonical": "3.7214677370134555e+256",
+        "rejected": true
+    },
+    {
+        "input": "7.8301053543312373e-177",
+        "canonical": "7.830105354331237e-177",
+        "rejected": true
+    },
+    {
+        "input": "-4.0197956181198788e-76",
+        "canonical": "-4.019795618119879e-76",
+        "rejected": true
+    },
+    {
+        "input": "-623158.50784665393",
+        "canonical": "-623158.5078466539",
+        "rejected": true
+    },
+    {
+        "input": "8.4813454248204643e+40",
+        "canonical": "8.481345424820464e+40",
+        "rejected": true
+    },
+    {
+        "input": "9.4252740160679772e-160",
+        "canonical": "9.425274016067977e-160",
+        "rejected": true
+    },
+    {
+        "input": "4.0172879539610521e-17",
+        "canonical": "4.017287953961052e-17",
+        "rejected": true
+    },
+    {
+        "input": "-1.2082173182038611e-18",
+        "canonical": "-1.208217318203861e-18",
+        "rejected": true
+    },
+    {
+        "input": "9.9140403881949222e-162",
+        "canonical": "9.914040388194922e-162",
+        "rejected": true
+    },
+    {
+        "input": "-7.5222673854669986e+223",
+        "canonical": "-7.522267385466999e+223",
+        "rejected": true
+    },
+    {
+        "input": "7.7138351453614189e-270",
+        "canonical": "7.713835145361419e-270",
+        "rejected": true
+    },
+    {
+        "input": "-4.6445452689428379e-145",
+        "canonical": "-4.644545268942838e-145",
+        "rejected": true
+    },
+    {
+        "input": "-9.2547163008753668e-176",
+        "canonical": "-9.254716300875367e-176",
+        "rejected": true
+    },
+    {
+        "input": "-5.5791197765568351e+247",
+        "canonical": "-5.579119776556835e+247",
+        "rejected": true
+    },
+    {
+        "input": "2.1012056949322364e-50",
+        "canonical": "2.1012056949322364e-50",
+        "rejected": true
+    },
+    {
+        "input": "1.3962910742179632e+265",
+        "canonical": "1.3962910742179632e+265",
+        "rejected": true
+    },
+    {
+        "input": "-4.0760259731919407e+296",
+        "canonical": "-4.076025973191941e+296",
+        "rejected": true
+    },
+    {
+        "input": "-2.2478973797734714e-264",
+        "canonical": "-2.2478973797734714e-264",
+        "rejected": true
+    },
+    {
+        "input": "6.8692514271232421e-173",
+        "canonical": "6.869251427123242e-173",
+        "rejected": true
+    },
+    {
+        "input": "3.4733514245005212e+151",
+        "canonical": "3.473351424500521e+151",
+        "rejected": true
+    },
+    {
+        "input": "1.3255576658356639e+117",
+        "canonical": "1.325557665835664e+117",
+        "rejected": true
+    },
+    {
+        "input": "-6.5369724931055239e-149",
+        "canonical": "-6.536972493105524e-149",
+        "rejected": true
+    }
+]

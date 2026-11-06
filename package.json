@@ -1,0 +1,13 @@
+{
+    "name": "@gregsphotography/site-builder-core-development",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "node tools/build-assets.mjs",
+        "build:check": "node tools/build-assets.mjs --check",
+        "test": "node tools/check-canonical.mjs"
+    },
+    "devDependencies": {
+        "esbuild": "^0.25.0"
+    }
+}

@@ -1,0 +1,6 @@
+/vendor/
+/node_modules/
+/.phpunit.cache/
+/.composer-stage.json
+/tests/Fixtures/worker-app/storage/
+/tests/Fixtures/worker-app/bootstrap/cache/

@@ -1,0 +1,17 @@
+[
+  {
+    "input": "{\"z\":0,\"a\":{\"x\":[],\"y\":{}},\"null\":null}",
+    "canonical": "{\"a\":{\"x\":[],\"y\":{}},\"null\":null,\"z\":0}",
+    "sha256": "bb250e6b4f889cf3fd95e6da30f1a5ff7582e4a688a3e9b0bc4f1995a7f94ebe"
+  },
+  {
+    "input": "{\"z\":1e-7,\"large\":1e+21,\"small\":0.002,\"one\":1.0,\"negativeZero\":-0.0}",
+    "canonical": "{\"large\":1e+21,\"negativeZero\":0,\"one\":1,\"small\":0.002,\"z\":1e-7}",
+    "sha256": "0ffc41481cb339677572fbf3c396d854da69eca6bdde0bde2e46040d221309fd"
+  },
+  {
+    "input": "{\"😀\":\"emoji\",\"é\":\"accent\",\"a\":[false,\"1\",1,null]}",
+    "canonical": "{\"a\":[false,\"1\",1,null],\"é\":\"accent\",\"😀\":\"emoji\"}",
+    "sha256": "c7e69c98e136b4f6537bee28f248cb07e60ae281927e45dfdeb8dccee193d7d5"
+  }
+]

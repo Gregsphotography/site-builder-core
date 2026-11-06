@@ -1,0 +1,79 @@
+{
+    "name": "gregsphotography/site-builder-core",
+    "description": "Independent Laravel content, rendering, routing and authorized page persistence.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "illuminate/auth": "^13.40",
+        "illuminate/console": "^13.40",
+        "illuminate/contracts": "^13.40",
+        "illuminate/database": "^13.40",
+        "illuminate/http": "^13.40",
+        "illuminate/routing": "^13.40",
+        "illuminate/support": "^13.40",
+        "illuminate/validation": "^13.40",
+        "illuminate/view": "^13.40",
+        "opis/json-schema": "^2.6",
+        "php": "^8.5",
+        "symfony/html-sanitizer": "^8.1",
+        "mmccook/php-json-canonicalization-scheme": ">=1.0.0-stable <=1.0.0-stable"
+    },
+    "autoload": {
+        "psr-4": {
+            "SiteBuilder\\Core\\": "src/",
+            "SiteBuilder\\Core\\Database\\Factories\\": "database/factories/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "SiteBuilder\\Core\\SiteBuilderServiceProvider"
+            ]
+        }
+    },
+    "archive": {
+        "exclude": [
+            "/tests",
+            "/tools",
+            "/vendor",
+            "/node_modules",
+            "/.github",
+            "/.phpunit.cache",
+            "/composer.lock",
+            "/package.json",
+            "/package-lock.json",
+            "/phpunit.xml",
+            "/.gitignore",
+            "/.gitattributes",
+            "/CONTRIBUTING.md"
+        ]
+    },
+    "conflict": {
+        "p2data/site-builder-core": "*"
+    },
+    "require-dev": {
+        "fakerphp/faker": "^1.24",
+        "laravel/pint": "^1.32",
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.5"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "SiteBuilder\\Core\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "format:check": "pint --test"
+    },
+    "config": {
+        "allow-plugins": false,
+        "sort-packages": true,
+        "platform": {
+            "php": "8.5.0"
+        }
+    },
+    "support": {
+        "issues": "https://github.com/Gregsphotography/site-builder-core/issues"
+    }
+}

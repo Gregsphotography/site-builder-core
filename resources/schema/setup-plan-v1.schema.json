@@ -1,0 +1,299 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:laravel-site-builder:design:setup-plan:1",
+  "type": "object",
+  "properties": {
+    "format": {
+      "const": "laravel-site-builder/setup-plan"
+    },
+    "version": {
+      "const": 1
+    },
+    "profile": {
+      "enum": [
+        "public",
+        "editor",
+        "custom"
+      ]
+    },
+    "status": {
+      "enum": [
+        "ready-to-apply",
+        "blocked",
+        "unavailable"
+      ]
+    },
+    "answersDigest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "discoveryDigest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "packages": {
+      "type": "object",
+      "properties": {
+        "core": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "components": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "filament": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "core"
+      ]
+    },
+    "operations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+          },
+          "contributor": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+          },
+          "kind": {
+            "enum": [
+              "file",
+              "migration",
+              "storage-link",
+              "sample-draft",
+              "manual"
+            ]
+          },
+          "action": {
+            "enum": [
+              "create",
+              "replace-owned",
+              "unchanged",
+              "manual",
+              "conflict"
+            ]
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255,
+                "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\)[A-Za-z0-9._/-]+$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "beforeHash": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "afterHash": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "dependsOn": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+            },
+            "maxItems": 100
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "redacted": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "contributor",
+          "kind",
+          "action",
+          "path",
+          "beforeHash",
+          "afterHash",
+          "dependsOn",
+          "summary",
+          "redacted"
+        ]
+      },
+      "maxItems": 5000
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+          },
+          "status": {
+            "enum": [
+              "pass",
+              "action",
+              "unavailable",
+              "not-applicable"
+            ]
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "action": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "status",
+          "code",
+          "message",
+          "action"
+        ]
+      },
+      "maxItems": 100
+    },
+    "nextActions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "message"
+        ]
+      },
+      "maxItems": 100
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "version",
+    "profile",
+    "status",
+    "answersDigest",
+    "discoveryDigest",
+    "digest",
+    "packages",
+    "operations",
+    "checks",
+    "nextActions"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "ready-to-apply"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "operations": {
+            "items": {
+              "properties": {
+                "action": {
+                  "enum": [
+                    "create",
+                    "replace-owned",
+                    "unchanged",
+                    "manual"
+                  ]
+                }
+              }
+            }
+          },
+          "checks": {
+            "items": {
+              "properties": {
+                "status": {
+                  "enum": [
+                    "pass",
+                    "action",
+                    "not-applicable"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

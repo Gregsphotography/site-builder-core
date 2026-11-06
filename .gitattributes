@@ -1,0 +1,13 @@
+/tests export-ignore
+/tools export-ignore
+/vendor export-ignore
+/node_modules export-ignore
+/.github export-ignore
+/.phpunit.cache export-ignore
+/composer.lock export-ignore
+/package.json export-ignore
+/package-lock.json export-ignore
+/phpunit.xml export-ignore
+/.gitignore export-ignore
+/.gitattributes export-ignore
+/CONTRIBUTING.md export-ignore

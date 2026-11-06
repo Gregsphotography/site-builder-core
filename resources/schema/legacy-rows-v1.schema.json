@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/site-builder/legacy-rows-v1.schema.json",
+  "title": "Site Builder plain legacy rows v1",
+  "type": "object",
+  "required": [
+    "format",
+    "version",
+    "source",
+    "tables"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": "laravel-site-builder/legacy-rows"
+    },
+    "version": {
+      "const": 1
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "namespace",
+        "application_timezone",
+        "locales"
+      ],
+      "properties": {
+        "namespace": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.:-]{1,64}$"
+        },
+        "application_timezone": {
+          "type": "string"
+        },
+        "locales": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "captured_at": {
+          "type": "string"
+        },
+        "mapper_version": {
+          "const": 1
+        },
+        "connection_fingerprint": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "application_name": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "tables": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "maxItems": 100000,
+        "items": {
+          "type": "object",
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "id": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[1-9][0-9]*$"
+                },
+                {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              ]
+            }
+          },
+          "additionalProperties": true
+        }
+      }
+    },
+    "extensions": {
+      "type": "object"
+    },
+    "columns": {
+      "type": "object"
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "format": "laravel-site-builder/document",
+  "version": 1,
+  "nodes": [{
+    "id": "legacy-stable-identifier",
+    "type": "unknown.vendor-component",
+    "version": 7,
+    "props": {"object": {}, "list": [], "nothing": null, "false": false, "number": 0.125, "external_identifier": "9007199254740992"},
+    "translations": {"en": {"heading": "English", "items": []}, "de": {"heading": "Deutsch"}, "xx": {"future": {}}},
+    "visibility": "hidden",
+    "children": [{"id": "nested", "type": "test.text", "version": 1, "props": {}, "translations": {}, "visibility": "visible", "children": [], "extensions": {}}],
+    "extensions": {"vendor.private": {"opaque": [null, {}, [], false, ""]}}
+  }],
+  "extensions": {"example": {"preserve": true}}
+}

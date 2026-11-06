@@ -1,0 +1,194 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:laravel-site-builder:design:doctor:1",
+  "type": "object",
+  "properties": {
+    "format": {
+      "const": "laravel-site-builder/doctor"
+    },
+    "version": {
+      "const": 1
+    },
+    "profile": {
+      "enum": [
+        "public",
+        "editor",
+        "custom"
+      ]
+    },
+    "status": {
+      "enum": [
+        "ready",
+        "needs-action",
+        "unavailable"
+      ]
+    },
+    "packages": {
+      "type": "object",
+      "properties": {
+        "core": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "components": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "filament": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "core"
+      ]
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+          },
+          "status": {
+            "enum": [
+              "pass",
+              "action",
+              "unavailable",
+              "not-applicable"
+            ]
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "action": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "status",
+          "code",
+          "message",
+          "action"
+        ]
+      },
+      "maxItems": 100
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "version",
+    "profile",
+    "status",
+    "packages",
+    "checks"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "ready"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "checks": {
+            "items": {
+              "properties": {
+                "status": {
+                  "enum": [
+                    "pass",
+                    "not-applicable"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "needs-action"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "checks": {
+            "contains": {
+              "properties": {
+                "status": {
+                  "const": "action"
+                }
+              }
+            },
+            "items": {
+              "properties": {
+                "status": {
+                  "enum": [
+                    "pass",
+                    "action",
+                    "not-applicable"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "unavailable"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "checks": {
+            "contains": {
+              "properties": {
+                "status": {
+                  "const": "unavailable"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

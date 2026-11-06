@@ -1,0 +1,46 @@
+name: Package tests
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        database: [sqlite, mysql]
+        dependencies: [minimum, current]
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: site_builder_package_test
+          MYSQL_ROOT_PASSWORD: testing
+        ports: ['3306:3306']
+        options: --health-cmd="mysqladmin ping -h 127.0.0.1 -ptesting" --health-interval=10s --health-timeout=5s --health-retries=10
+    env:
+      DB_CONNECTION: ${{ matrix.database }}
+      DB_DATABASE: ${{ matrix.database == 'mysql' && 'site_builder_package_test' || ':memory:' }}
+      DB_HOST: 127.0.0.1
+      DB_USERNAME: root
+      DB_PASSWORD: testing
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962
+        with:
+          php-version: '8.5'
+          extensions: dom, fileinfo, gd, intl, mbstring, pdo_mysql, pdo_sqlite, zip
+          tools: composer:v2
+          coverage: none
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: '24'
+      - run: php tools/dependencies.php ${{ matrix.dependencies }}
+      - run: composer validate --strict
+      - run: npm ci --ignore-scripts --no-fund --no-audit
+      - run: npm run build:check
+      - run: npm test
+      - run: composer test

@@ -1,0 +1,250 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:laravel-site-builder:site-part:1",
+  "title": "Site Builder typed site-part payload v1",
+  "description": "Shape only. Registered component/theme/region versions, authorization, immutable closure, graph limits and destination semantics are checked by core services.",
+  "type": "object",
+  "required": [
+    "format",
+    "version",
+    "kind"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": "laravel-site-builder/site-part"
+    },
+    "version": {
+      "const": 1
+    },
+    "kind": {
+      "enum": [
+        "section",
+        "header",
+        "footer",
+        "design"
+      ]
+    },
+    "document": {
+      "$ref": "#/$defs/document"
+    },
+    "design": {
+      "type": "object",
+      "required": [
+        "version",
+        "theme"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "base": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+          }
+        },
+        "responsive": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_-]{0,31}$",
+            "not": {
+              "const": "base"
+            }
+          },
+          "additionalProperties": {
+            "type": "object",
+            "propertyNames": {
+              "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+            },
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+            }
+          }
+        },
+        "theme": {
+          "type": "object",
+          "required": [
+            "id",
+            "version",
+            "preset"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,99}$"
+            },
+            "version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "preset": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,99}$"
+            }
+          }
+        }
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "kind": {
+          "enum": [
+            "section",
+            "header",
+            "footer"
+          ]
+        }
+      },
+      "required": [
+        "document"
+      ],
+      "not": {
+        "required": [
+          "design"
+        ]
+      }
+    },
+    {
+      "properties": {
+        "kind": {
+          "const": "design"
+        }
+      },
+      "required": [
+        "design"
+      ],
+      "not": {
+        "required": [
+          "document"
+        ]
+      }
+    }
+  ],
+  "$defs": {
+    "document": {
+      "title": "Laravel Site Builder document version 1",
+      "description": "Structural design contract. Component semantics, unique IDs, locale configuration and depth/size limits require application validation.",
+      "type": "object",
+      "required": [
+        "format",
+        "version",
+        "nodes",
+        "extensions"
+      ],
+      "properties": {
+        "format": {
+          "const": "laravel-site-builder/document"
+        },
+        "version": {
+          "const": 1
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/document/$defs/node"
+          }
+        },
+        "extensions": {
+          "$ref": "#/$defs/document/$defs/object"
+        }
+      },
+      "additionalProperties": false,
+      "$defs": {
+        "jsonValue": {
+          "oneOf": [
+            {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/document/$defs/jsonValue"
+              }
+            },
+            {
+              "$ref": "#/$defs/document/$defs/object"
+            }
+          ]
+        },
+        "object": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/document/$defs/jsonValue"
+          }
+        },
+        "node": {
+          "type": "object",
+          "required": [
+            "id",
+            "type",
+            "version",
+            "props",
+            "translations",
+            "visibility",
+            "children",
+            "extensions"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "type": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,99}$"
+            },
+            "version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "props": {
+              "$ref": "#/$defs/document/$defs/object"
+            },
+            "translations": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,11}$"
+              },
+              "additionalProperties": {
+                "$ref": "#/$defs/document/$defs/object"
+              }
+            },
+            "visibility": {
+              "enum": [
+                "visible",
+                "hidden"
+              ]
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/document/$defs/node"
+              }
+            },
+            "extensions": {
+              "$ref": "#/$defs/document/$defs/object"
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  }
+}

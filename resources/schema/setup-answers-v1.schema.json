@@ -1,0 +1,541 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:laravel-site-builder:design:setup-answers:1",
+  "type": "object",
+  "properties": {
+    "format": {
+      "const": "laravel-site-builder/setup-answers"
+    },
+    "version": {
+      "const": 1
+    },
+    "profile": {
+      "enum": [
+        "public",
+        "editor",
+        "custom"
+      ]
+    },
+    "application": {
+      "enum": [
+        "fresh",
+        "existing"
+      ]
+    },
+    "locales": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 32,
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,11}$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "dir": {
+            "enum": [
+              "ltr",
+              "rtl"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "label",
+          "dir"
+        ]
+      }
+    },
+    "routes": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "prefix": {
+          "type": "string",
+          "maxLength": 100,
+          "pattern": "^(?:[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*)?$"
+        },
+        "previewPrefix": {
+          "type": "string",
+          "maxLength": 100,
+          "pattern": "^(?:[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*)?$",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "prefix",
+        "previewPrefix"
+      ]
+    },
+    "presentation": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "enum": [
+            "preset",
+            "host"
+          ]
+        },
+        "layout": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "layout"
+      ]
+    },
+    "features": {
+      "type": "object",
+      "properties": {
+        "media": {
+          "type": "boolean"
+        },
+        "savedSections": {
+          "type": "boolean"
+        },
+        "clipboard": {
+          "type": "boolean"
+        },
+        "history": {
+          "type": "boolean"
+        },
+        "siteParts": {
+          "type": "boolean"
+        },
+        "sampleDraft": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "media",
+        "savedSections",
+        "clipboard",
+        "history",
+        "siteParts",
+        "sampleDraft"
+      ]
+    },
+    "authorization": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "enum": [
+            "existing",
+            "allowlist",
+            "deny"
+          ]
+        },
+        "guard": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+        },
+        "actorAlias": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "actorKeys": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 191
+          },
+          "maxItems": 100
+        },
+        "pageAbilities": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "view",
+              "create",
+              "update",
+              "preview",
+              "publish",
+              "restore",
+              "delete"
+            ]
+          },
+          "maxItems": 7,
+          "uniqueItems": true
+        },
+        "sitePartAbilities": {
+          "type": "object",
+          "properties": {
+            "section": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "view",
+                  "create",
+                  "update",
+                  "preview",
+                  "publish",
+                  "restore",
+                  "delete",
+                  "use",
+                  "withdraw"
+                ]
+              },
+              "maxItems": 9,
+              "uniqueItems": true
+            },
+            "header": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "view",
+                  "create",
+                  "update",
+                  "preview",
+                  "publish",
+                  "restore",
+                  "delete",
+                  "use",
+                  "withdraw"
+                ]
+              },
+              "maxItems": 9,
+              "uniqueItems": true
+            },
+            "footer": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "view",
+                  "create",
+                  "update",
+                  "preview",
+                  "publish",
+                  "restore",
+                  "delete",
+                  "use",
+                  "withdraw"
+                ]
+              },
+              "maxItems": 9,
+              "uniqueItems": true
+            },
+            "site-design": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "view",
+                  "create",
+                  "update",
+                  "preview",
+                  "publish",
+                  "restore",
+                  "delete",
+                  "use",
+                  "withdraw"
+                ]
+              },
+              "maxItems": 9,
+              "uniqueItems": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "mediaAbilities": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "view",
+              "upload",
+              "update",
+              "delete"
+            ]
+          },
+          "maxItems": 4
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "guard",
+        "actorAlias",
+        "actorKeys",
+        "pageAbilities",
+        "sitePartAbilities",
+        "mediaAbilities"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "allowlist"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "actorAlias": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+              },
+              "actorKeys": {
+                "minItems": 1,
+                "uniqueItems": true
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "actorAlias": {
+                "type": "null"
+              },
+              "actorKeys": {
+                "maxItems": 0
+              },
+              "pageAbilities": {
+                "maxItems": 0
+              },
+              "sitePartAbilities": {
+                "maxProperties": 0
+              },
+              "mediaAbilities": {
+                "maxItems": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    "registration": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "enum": [
+            "manual",
+            "provider-stub"
+          ]
+        },
+        "panelId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "panelFile": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255,
+              "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\)[A-Za-z0-9._/-]+$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "panelId",
+        "panelFile"
+      ]
+    },
+    "storage": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "enum": [
+            "disabled",
+            "local-public",
+            "host"
+          ]
+        },
+        "disk": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "createLink": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "disk",
+        "createLink"
+      ]
+    },
+    "migrations": {
+      "enum": [
+        "publish",
+        "skip"
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "version",
+    "profile",
+    "application",
+    "locales",
+    "routes",
+    "presentation",
+    "features",
+    "authorization",
+    "registration",
+    "storage",
+    "migrations"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "const": "public"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "registration": {
+            "properties": {
+              "panelId": {
+                "type": "null"
+              },
+              "panelFile": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "const": "editor"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "registration": {
+            "properties": {
+              "panelId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "storage": {
+            "properties": {
+              "mode": {
+                "const": "disabled"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "storage": {
+            "properties": {
+              "disk": {
+                "type": "null"
+              },
+              "createLink": {
+                "const": false
+              }
+            }
+          },
+          "features": {
+            "properties": {
+              "media": {
+                "const": false
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "presentation": {
+            "properties": {
+              "mode": {
+                "const": "preset"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "presentation": {
+            "properties": {
+              "layout": {
+                "enum": [
+                  "components.minimal",
+                  "components.business",
+                  "components.editorial"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
