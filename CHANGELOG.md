@@ -1,5 +1,5 @@
 # Changelog
 
-## 0.3.0-rc.11 — staged
+## 0.4.0-rc.2 — staged
 
-Fixes duplicate and invalid URL validation, literal zero URL paths, editor tab layout and accepted focus visibility, read-only history messaging, and repeated media schema queries. CI audits dependencies and avoids duplicate feature-branch runs. No database migration or content-format change is required.
+Adds composition primitives and editable patterns; accessible tabs, accordion, tables, contents and breadcrumbs; uploaded/embedded video, captions and location; optional published-form verification, enquiry inbox, managed notification profiles and durable outbox; independent on-page cards/gallery search and tag filters. Existing document v1/exchange v3 remain stable. Forms require explicit install/enable and host policies/queue; no consumer deployment is included.

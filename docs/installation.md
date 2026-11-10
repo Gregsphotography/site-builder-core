@@ -1,10 +1,10 @@
 # Installation
 
-After public indexing, explicitly require every needed prerelease package at 0.3.0-rc.11:
+After public indexing, explicitly require every needed prerelease package at 0.4.0-rc.2:
 
 ```sh
-composer require gregsphotography/site-builder-core:0.3.0-rc.11 gregsphotography/site-builder-components:0.3.0-rc.11
-# Add gregsphotography/site-builder-filament:0.3.0-rc.11 for an already installed authenticated Filament panel.
+composer require gregsphotography/site-builder-core:0.4.0-rc.2 gregsphotography/site-builder-components:0.4.0-rc.2
+# Add gregsphotography/site-builder-filament:0.4.0-rc.2 for an already installed authenticated Filament panel.
 cp vendor/gregsphotography/site-builder-core/resources/setup/public-v1.json builder-setup.json
 # Review the complete choices, then:
 php artisan site-builder:setup --answers=builder-setup.json --plan --json --no-interaction

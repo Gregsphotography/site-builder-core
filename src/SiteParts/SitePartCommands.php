@@ -21,6 +21,7 @@ use SiteBuilder\Core\DraftHistory\HistoryContext;
 use SiteBuilder\Core\DraftHistory\LogicalAction;
 use SiteBuilder\Core\Exceptions\WriteConflict;
 use SiteBuilder\Core\Persistence\ActorIdentity;
+use SiteBuilder\Core\Persistence\AuthoringConstraints;
 use SiteBuilder\Core\Rendering\LocaleCatalog;
 use SiteBuilder\Core\Rendering\RenderContext;
 use SiteBuilder\Core\Rendering\RenderFeatureRegistry;
@@ -49,6 +50,7 @@ final class SitePartCommands
             $this->composition->lockReferences($document, $this->context(), $actor);
             $this->validateNewPins($actor, null, $document);
             $this->validator->validate($document, context: $this->context());
+            app(AuthoringConstraints::class)->check($actor, $document, $this->context());
             $part = new SitePart;
             $part->forceFill(['id' => (string) Str::uuid(), 'kind' => $kind, ...$metadata, 'draft_payload' => $payload, 'write_version' => 0, 'created_by' => $identity->id, 'created_by_type' => $identity->type, 'updated_by' => $identity->id, 'updated_by_type' => $identity->type])->save();
             app(ContentDependencies::class)->syncPart($part);
@@ -177,6 +179,9 @@ final class SitePartCommands
                 throw new WriteConflict('stale_version', $initial->write_version);
             }
             $this->composition->lockMutation($initial->draft_payload->validationDocument(), $validateClosure ? ($candidate ?? $initial->draft_payload)->validationDocument() : null, $this->context(), $actor, $partId);
+            if ($validateClosure) {
+                app(AuthoringConstraints::class)->check($actor, ($candidate ?? $initial->draft_payload)->validationDocument(), $this->context());
+            }
             $part = SitePart::query()->lockForUpdate()->findOrFail($partId);
             $identity = $this->access->authorize($actor, $ability, $part);
             $this->locks->assertHeld($part, $identity, $lease);

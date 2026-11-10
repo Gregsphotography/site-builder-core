@@ -13,6 +13,7 @@ use SiteBuilder\Core\Content\Document;
 use SiteBuilder\Core\Content\DocumentValidator;
 use SiteBuilder\Core\Content\JsonObject;
 use SiteBuilder\Core\Contracts\ContributesStructuredData;
+use SiteBuilder\Core\Contracts\RenderedDocumentProcessor;
 use SiteBuilder\Core\Design\DesignData;
 use SiteBuilder\Core\Design\DesignResolver;
 
@@ -63,7 +64,7 @@ final class DocumentRenderer
             $html = '<div '.$attributes.'>'.$html.'</div>';
         }
 
-        return new RenderResult(new HtmlString($html), $diagnostics, $graph);
+        return $this->processed(new RenderResult(new HtmlString($html), $diagnostics, $graph), $context);
     }
 
     private function physicalRoots(Document $document, array $ids): array
@@ -151,6 +152,15 @@ final class DocumentRenderer
         $header = $resolution->header === null ? null : new HtmlString($walk($resolution->header));
         $footer = $resolution->footer === null ? null : new HtmlString($walk($resolution->footer));
 
-        return new RenderResult(new HtmlString($body), $diagnostics, $graph, $header, $footer);
+        return $this->processed(new RenderResult(new HtmlString($body), $diagnostics, $graph, $header, $footer), $context);
+    }
+
+    private function processed(RenderResult $result, RenderContext $context): RenderResult
+    {
+        foreach (app()->tagged(RenderedDocumentProcessor::class) as $processor) {
+            $result = $processor->process($result, $context);
+        }
+
+        return $result;
     }
 }

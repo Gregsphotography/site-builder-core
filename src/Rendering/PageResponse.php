@@ -67,7 +67,7 @@ final class PageResponse
                 $html = str_contains($html, '</body>') ? str_replace('</body>', $guard.'</body>', $html) : $html.$guard;
             }
 
-            return response($html, 200, $preview ? self::privateHeaders() : ['Cache-Control' => 'public, max-age=0, must-revalidate']);
+            return response($html, 200, $preview ? self::privateHeaders() : ['Cache-Control' => app(PublicAssets::class)->privateResponse() ? 'private, no-store' : 'public, max-age=0, must-revalidate']);
         } catch (ValidationException|\InvalidArgumentException $exception) {
             $document = ($preview ? $page->draft_content : $page->published_content) ?? new Document;
             if (CompositionData::payload($document) === null && ! CompositionData::hasReferences($document->nodes)) {

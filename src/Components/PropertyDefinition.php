@@ -18,9 +18,13 @@ final readonly class PropertyDefinition
         public bool $requiredForPublish = false,
         public array $properties = [],
         public ?self $items = null,
+        public string $mediaKind = 'image',
     ) {
         if (! in_array($kind, ['text', 'html', 'boolean', 'number', 'enum', 'token', 'url', 'media', 'page', 'revision', 'object', 'list'], true)) {
             throw new InvalidArgumentException('Unknown property kind.');
+        }
+        if (! in_array($mediaKind, ['image', 'video', 'track'], true)) {
+            throw new InvalidArgumentException('Unknown media kind.');
         }
         foreach ($properties as $key => $definition) {
             if (! is_string($key) || ! $definition instanceof self) {
@@ -54,9 +58,9 @@ final readonly class PropertyDefinition
         return new self('url', $translated, $nullable);
     }
 
-    public static function media(bool $translated = false, bool $nullable = true): self
+    public static function media(bool $translated = false, bool $nullable = true, string $mediaKind = 'image'): self
     {
-        return new self('media', $translated, $nullable);
+        return new self('media', $translated, $nullable, mediaKind: $mediaKind);
     }
 
     public static function page(bool $translated = false, bool $nullable = true): self

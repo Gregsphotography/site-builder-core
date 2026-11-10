@@ -9,6 +9,7 @@ use SiteBuilder\Core\Components\ComponentRegistry;
 use SiteBuilder\Core\Components\PropertyDefinition;
 use SiteBuilder\Core\Composition\CompositionData;
 use SiteBuilder\Core\Composition\PublishedPartReference;
+use SiteBuilder\Core\Contracts\DocumentConstraint;
 use SiteBuilder\Core\Contracts\ValidatesComponentValues;
 use SiteBuilder\Core\Design\DesignData;
 use SiteBuilder\Core\Design\DesignResolver;
@@ -97,6 +98,9 @@ final class DocumentValidator
         };
         $diagnostics = [...$diagnostics, ...$features->diagnostics($document, null, $context)];
         $walk($document->nodes, '/nodes');
+        foreach (app()->tagged(DocumentConstraint::class) as $constraint) {
+            $diagnostics = [...$diagnostics, ...$constraint->diagnostics($document, $context, $publishing)];
+        }
 
         return $diagnostics;
     }
@@ -123,7 +127,7 @@ final class DocumentValidator
         }
         $valid = match ($property->kind) {
             'text', 'html' => is_string($value),
-            'url', 'media' => is_string($value) && $this->urls->valid($value, $property->kind === 'media'),
+            'url', 'media' => is_string($value) && $this->urls->valid($value, $property->kind === 'media') && ($property->kind !== 'media' || $this->resolver->acceptsMedia($value, $property)),
             'enum' => in_array($value, $property->options, true),
             'token' => is_string($value) && in_array($value, $property->options, true) && is_string(config('site-builder.tokens.'.$value)),
             'boolean' => is_bool($value),

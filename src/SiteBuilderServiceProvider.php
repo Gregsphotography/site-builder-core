@@ -76,6 +76,7 @@ final class SiteBuilderServiceProvider extends ServiceProvider
         $this->app->singleton(LegacyDocuments::class);
         $this->app->bindIf(MediaResolver::class, PathMediaResolver::class);
         $this->app->bindIf(SiteMetadataProvider::class, StoredSiteMetadata::class);
+        $this->app->bindIf(Contracts\BreadcrumbProvider::class, Rendering\PublishedBreadcrumbs::class);
         $this->app->singleton(DocumentCodec::class, fn ($app): DocumentCodec => new DocumentCodec(
             maxDepth: (int) $app['config']->get('site-builder.documents.max_depth', 32),
             maxNodes: (int) $app['config']->get('site-builder.documents.max_nodes', 1000),

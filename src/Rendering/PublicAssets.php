@@ -13,16 +13,19 @@ final class PublicAssets
 
     private array $emitted = [];
 
+    private bool $privateResponse = false;
+
     public function __construct(private PublicAssetRegistry $registry) {}
 
     public function scope(callable $render): mixed
     {
-        $previous = [$this->requested, $this->emitted];
+        $previous = [$this->requested, $this->emitted, $this->privateResponse];
         $this->requested = $this->emitted = [];
+        $this->privateResponse = false;
         try {
             return $render();
         } finally {
-            [$this->requested, $this->emitted] = $previous;
+            [$this->requested, $this->emitted, $this->privateResponse] = $previous;
         }
     }
 
@@ -30,6 +33,16 @@ final class PublicAssets
     {
         $this->registry->get($id);
         $this->requested[$id] = true;
+    }
+
+    public function requirePrivateResponse(): void
+    {
+        $this->privateResponse = true;
+    }
+
+    public function privateResponse(): bool
+    {
+        return $this->privateResponse;
     }
 
     public function html(): HtmlString

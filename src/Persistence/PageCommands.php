@@ -51,6 +51,7 @@ final class PageCommands
             app(CompositionResolver::class)->lockMutation(null, $document, $creationContext, $actor);
             app(SitePartCommands::class)->validateNewPins($actor, null, $document);
             $this->validator->validate($document, context: $creationContext);
+            app(AuthoringConstraints::class)->check($actor, $document, $creationContext);
             $page = new Page($metadata);
             $page->forceFill(['status' => 'draft', 'draft_content' => $document, 'write_version' => 0])->save();
             $this->slugs($page, $slugs);
@@ -175,6 +176,7 @@ final class PageCommands
             app(CompositionResolver::class)->lockMutation($page->draft_content, $target, $context, $actor);
             if ($target !== null) {
                 app(SitePartCommands::class)->validateNewPins($actor, $page->draft_content, $target);
+                app(AuthoringConstraints::class)->check($actor, $target, $context);
             }
             if ($history !== null) {
                 app(DraftHistory::class)->assertCurrent($history, $actor, $page, $token);

@@ -9,6 +9,7 @@ use SiteBuilder\Core\Composition\PublishedPartReference;
 use SiteBuilder\Core\Content\Node;
 use SiteBuilder\Core\Contracts\ComponentDefinition;
 use SiteBuilder\Core\Contracts\MediaResolver;
+use SiteBuilder\Core\Contracts\TypedMediaResolver;
 use stdClass;
 
 final class PropertyResolver
@@ -44,7 +45,7 @@ final class PropertyResolver
             'text' => is_string($value) ? $value : null,
             'html' => is_string($value) ? $this->html->sanitize($value) : '',
             'url' => is_string($value) && $this->urls->valid($value) ? $value : null,
-            'media' => $this->mediaUrl($value),
+            'media' => $this->mediaUrl($value, $property),
             'enum' => in_array($value, $property->options, true) ? $value : null,
             'token' => is_string($value) && in_array($value, $property->options, true) ? $this->token($value) : null,
             'boolean' => is_bool($value) ? $value : null,
@@ -72,11 +73,26 @@ final class PropertyResolver
         return is_string($value) && preg_match('/^(#[a-fA-F0-9]{3,8}|-?[0-9.]+(?:rem|em|px|%|vh|vw)|[a-zA-Z]+)$/D', $value) ? $value : null;
     }
 
-    private function mediaUrl(mixed $value): ?string
+    private function mediaUrl(mixed $value, PropertyDefinition $property): ?string
     {
+        if (! $this->acceptsMedia($value, $property)) {
+            return null;
+        }
         $url = is_string($value) ? $this->media->url($value) : null;
 
         return $url !== null && $this->urls->valid($url, true) ? $url : null;
+    }
+
+    public function acceptsMedia(mixed $value, PropertyDefinition $property): bool
+    {
+        if (is_string($value) && $this->media instanceof TypedMediaResolver) {
+            $kind = $this->media->kind($value);
+            if ($kind !== null && $kind !== $property->mediaKind) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function object(stdClass $value, PropertyDefinition $property): stdClass
