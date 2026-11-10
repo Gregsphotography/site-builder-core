@@ -2,10 +2,10 @@
 
 MIT-licensed Laravel Site Builder package. PHP ^8.5 / Laravel ^13.40; the optional editor uses Filament ^5.11 / Livewire ^4.4.8. Later Laravel majors are not yet supported.
 
-This 0.4.0-rc.2 source is prepared for release review. Public availability is not implied by this file. After the aligned packages are indexed:
+This 0.4.0-rc.3 source is prepared for release review. Public availability is not implied by this file. After the aligned packages are indexed:
 
 ```sh
-composer require gregsphotography/site-builder-core:0.4.0-rc.2
+composer require gregsphotography/site-builder-core:0.4.0-rc.3
 ```
 
 Install matching core/components explicitly for the standard public profile; core/filament supports a custom editor without components.
