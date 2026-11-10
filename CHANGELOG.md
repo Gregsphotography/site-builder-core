@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.0-rc.4 — staged
+
+Version alignment for the component example release. Core runtime behaviour is unchanged from 0.4.0-rc.3.
+
 ## 0.4.0-rc.3 — staged
 
 Version alignment for the illustrated editor release. Core runtime behaviour is unchanged from 0.4.0-rc.2.
