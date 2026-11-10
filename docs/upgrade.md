@@ -2,7 +2,7 @@
 
 Back up application code, database and media coherently; retain the exact old proprietary archives. New package names are gregsphotography/site-builder-*; PHP namespaces, table names, component IDs and stored content formats remain unchanged.
 
-In a disposable rehearsal, remove old `p2data/site-builder-*` root requirements with `composer remove ... --no-update`, add all selected new names at 0.5.0-rc.1 with `composer require ... --no-update`, then resolve the reviewed names/dependencies together. Preserve unrelated repositories and locks. Narrowly remove/exclude only old builder names from canonical private artifact repositories that shadow the new selection. New packages conflict with the corresponding old names to prevent duplicate namespace installation.
+In a disposable rehearsal, remove old `p2data/site-builder-*` root requirements with `composer remove ... --no-update`, add all selected new names at 0.5.0-rc.2 with `composer require ... --no-update`, then resolve the reviewed names/dependencies together. Preserve unrelated repositories and locks. Narrowly remove/exclude only old builder names from canonical private artifact repositories that shadow the new selection. New packages conflict with the corresponding old names to prevent duplicate namespace installation.
 
 After resolving the new packages in a disposable copy, run `php artisan site-builder:canonical-check --json` before deployment. This read-only preflight checks registered content JSON; exit 1 means affected rows require explicit review, and exit 2 means runtime/schema inspection is unavailable. Keep its row-location report private. Never deploy over an affected host or rehash historical state automatically. See [numeric compatibility](canonicalization.md).
 

@@ -106,4 +106,4 @@ jobs:
           coverage: none
       - run: php tools/dependencies.php current
       - name: PostgreSQL authoring and component coverage
-        run: vendor/bin/phpunit tests/Feature/PostgreSqlCompatibilityTest.php
+        run: vendor/bin/phpunit tests/Feature/PostgreSqlCompatibilityTest.php tests/Feature/DiscoveryInstallationTest.php
