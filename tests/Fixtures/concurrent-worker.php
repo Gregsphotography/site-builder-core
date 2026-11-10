@@ -6,6 +6,7 @@ use Illuminate\Auth\GenericUser;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use SiteBuilder\Core\Content\CanonicalJson;
 use SiteBuilder\Core\Content\Document;
 use SiteBuilder\Core\Content\JsonObject;
@@ -28,6 +29,15 @@ if (! str_starts_with(DB::selectOne('SELECT VERSION() AS version')->version, '8.
 }
 Gate::define('update', fn (GenericUser $user): bool => true);
 Gate::define('publish', fn (GenericUser $user): bool => true);
+Gate::define('create', fn (GenericUser $user): bool => true);
+$actor = new GenericUser(['id' => (int) $argv[4]]);
+$mode = $argv[6];
+$pageId = (int) $argv[3];
+$token = $argv[5];
+if ($mode === 'slug-rename') {
+    $pageId = app(PageCommands::class)->create($actor, ['title' => 'Original '.$argv[8]], ['en' => 'original-'.$argv[8]])->page->id;
+    $token = app(PageLocks::class)->acquire($actor, $pageId)->token;
+}
 $barrier = $argv[7];
 if (realpath(dirname($barrier)) !== realpath(sys_get_temp_dir()) || ! str_starts_with(basename($barrier), 'site-builder-race-')) {
     throw new RuntimeException('Invalid test barrier directory.');
@@ -40,10 +50,7 @@ while (! is_file($barrier.'/go')) {
     }
     usleep(1000);
 }
-$actor = new GenericUser(['id' => (int) $argv[4]]);
 try {
-    $pageId = (int) $argv[3];
-    $mode = $argv[6];
     if ($mode === 'acquire') {
         app(PageLocks::class)->acquire($actor, $pageId, $argv[5]);
     } elseif ($mode === 'draft') {
@@ -51,10 +58,19 @@ try {
     } elseif ($mode === 'publish') {
         $page = Page::query()->findOrFail($pageId);
         app(PageCommands::class)->publish($actor, $pageId, $argv[5], 0, app(CanonicalJson::class)->digest($page->draft_content));
+    } elseif ($mode === 'slug-create') {
+        app(PageCommands::class)->create($actor, ['title' => 'Contested create'], ['en' => 'contested-path']);
+    } elseif ($mode === 'slug-rename') {
+        app(PageCommands::class)->saveMetadata($actor, $pageId, $token, 0, ['title' => 'Renamed'], ['en' => 'contested-path']);
     } else {
         throw new RuntimeException('Unknown worker mode.');
     }
     echo 'accepted';
 } catch (WriteConflict $exception) {
     echo $exception->reason;
+} catch (ValidationException $exception) {
+    if (! isset($exception->errors()['slugs'])) {
+        throw $exception;
+    }
+    echo 'url_taken';
 }

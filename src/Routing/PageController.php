@@ -38,7 +38,8 @@ final class PageController
         }
         $parts = $path === '' ? [] : explode('/', $path);
         $locale = isset($parts[0]) && $locales->has($parts[0]) ? array_shift($parts) : $locales->default();
-        $slug = rawurldecode(implode('/', $parts)) ?: 'home';
+        $slug = rawurldecode(implode('/', $parts));
+        $slug = $slug === '' ? 'home' : $slug;
         $translation = PageSlug::query()->where('locale', $locale)->where('slug', $slug)->first();
         $page = $translation?->page;
         if ($page === null) {

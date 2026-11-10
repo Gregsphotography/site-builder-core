@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SiteBuilder\Core\Persistence;
 
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -25,6 +26,7 @@ use SiteBuilder\Core\Exceptions\WriteConflict;
 use SiteBuilder\Core\Models\Page;
 use SiteBuilder\Core\Models\PageRedirect;
 use SiteBuilder\Core\Models\PageRevision;
+use SiteBuilder\Core\Models\PageSlug;
 use SiteBuilder\Core\Rendering\LayoutRegistry;
 use SiteBuilder\Core\Rendering\LocaleCatalog;
 use SiteBuilder\Core\Rendering\RenderContext;
@@ -251,6 +253,9 @@ final class PageCommands
             if (! is_string($locale) || ! $this->locales->has($locale) || ($slug !== null && (! is_string($slug) || strlen($slug) > 255 || ! preg_match('~^[\pL\pN_-]+(?:/[\pL\pN_-]+)*$~uD', $slug) || in_array(explode('/', $slug)[0], $this->locales->all(), true)))) {
                 throw ValidationException::withMessages(['slugs' => 'Use configured locales and safe nonreserved slash-separated slugs, or null to remove a locale.']);
             }
+            if ($slug !== null && PageSlug::query()->where('locale', $locale)->where('slug', $slug)->where('page_id', '!=', $page->id)->exists()) {
+                throw ValidationException::withMessages(['slugs' => 'This URL path is already used by another page in this language.']);
+            }
             $old = $page->slugs()->where('locale', $locale)->first();
             if ($old !== null && $old->slug !== $slug) {
                 PageRedirect::query()->updateOrCreate(['locale' => $locale, 'from_slug' => $old->slug], ['page_id' => $page->id, 'status' => 301]);
@@ -258,7 +263,16 @@ final class PageCommands
             if ($slug === null) {
                 $old?->delete();
             } else {
-                $page->slugs()->updateOrCreate(['locale' => $locale], ['slug' => $slug]);
+                try {
+                    $page->slugs()->updateOrCreate(['locale' => $locale], ['slug' => $slug]);
+                } catch (UniqueConstraintViolationException $exception) {
+                    $message = $exception->errorInfo[2] ?? '';
+                    $table = $page->getConnection()->getTablePrefix().(new PageSlug)->getTable();
+                    if (! str_contains($message, 'site_builder_page_slugs_locale_slug_unique') && ! str_contains($message, 'UNIQUE constraint failed: '.$table.'.locale, '.$table.'.slug')) {
+                        throw $exception;
+                    }
+                    throw ValidationException::withMessages(['slugs' => 'This URL path is already used by another page in this language.']);
+                }
                 PageRedirect::query()->where('locale', $locale)->where('from_slug', $slug)->delete();
             }
         }

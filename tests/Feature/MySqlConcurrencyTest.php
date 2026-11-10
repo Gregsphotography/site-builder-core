@@ -95,6 +95,28 @@ class MySqlConcurrencyTest extends DatabaseTestCase
         $this->assertNull($page->fresh()->published_content);
     }
 
+    public function test_simultaneous_page_creations_have_one_url_winner_and_no_orphan_pages(): void
+    {
+        $page = Page::factory()->create();
+        $results = $this->race($page, 'slug-create');
+        $this->assertSame(1, $results['accepted'] ?? 0);
+        $this->assertSame(2, $results['url_taken'] ?? 0);
+        $this->assertSame(2, Page::query()->count());
+        $this->assertSame(1, DB::table('site_builder_page_slugs')->where('slug', 'contested-path')->count());
+    }
+
+    public function test_simultaneous_renames_keep_rejected_metadata_and_redirects_atomic(): void
+    {
+        $page = Page::factory()->create();
+        $results = $this->race($page, 'slug-rename');
+        $this->assertSame(1, $results['accepted'] ?? 0);
+        $this->assertSame(2, $results['url_taken'] ?? 0);
+        $this->assertSame(1, Page::query()->where('title', 'Renamed')->where('write_version', 1)->count());
+        $this->assertSame(2, Page::query()->where('title', 'like', 'Original %')->where('write_version', 0)->count());
+        $this->assertSame(1, DB::table('site_builder_page_redirects')->count());
+        $this->assertSame(3, DB::table('site_builder_page_slugs')->count());
+    }
+
     public function test_simultaneous_publications_create_exactly_one_revision(): void
     {
         Gate::define('update', fn (): bool => true);

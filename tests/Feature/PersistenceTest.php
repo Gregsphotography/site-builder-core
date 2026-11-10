@@ -8,7 +8,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\GenericUser;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Database\QueryException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -29,6 +29,7 @@ use SiteBuilder\Core\Exchange\Snapshot;
 use SiteBuilder\Core\Models\Page;
 use SiteBuilder\Core\Models\PageLock;
 use SiteBuilder\Core\Models\PageRevision;
+use SiteBuilder\Core\Models\PageSlug;
 use SiteBuilder\Core\Persistence\PageCommands;
 use SiteBuilder\Core\Persistence\PageHistory;
 use SiteBuilder\Core\Persistence\PageLocks;
@@ -284,7 +285,8 @@ class PersistenceTest extends DatabaseTestCase
         try {
             $this->commands->saveMetadata($this->actor, $one->id, $lease->token, 0, ['title' => 'Changed'], ['de' => 'eins', 'en' => 'two']);
             $this->fail('Duplicate slug accepted.');
-        } catch (QueryException) {
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('slugs', $exception->errors());
             $this->assertSame('One', $one->fresh()->title);
             $this->assertSame(0, $one->fresh()->write_version);
             $this->assertSame(['one'], $one->slugs()->pluck('slug')->all());
@@ -293,6 +295,34 @@ class PersistenceTest extends DatabaseTestCase
         $revision = PageRevision::factory()->create(['page_id' => $two->id]);
         $this->expectException(ModelNotFoundException::class);
         $this->commands->restore($this->actor, $one->id, $lease->token, 0, $revision->id);
+    }
+
+    public function test_duplicate_creation_rolls_back_and_paths_are_scoped_to_their_locale(): void
+    {
+        $page = $this->commands->create($this->actor, ['title' => 'Original'], ['en' => 'shared'])->page;
+        try {
+            $this->commands->create($this->actor, ['title' => 'Rejected'], ['de' => 'unique', 'en' => 'shared']);
+            $this->fail('A duplicate URL was accepted.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('slugs', $exception->errors());
+            $this->assertSame(1, Page::query()->count());
+            $this->assertSame(1, DB::table('site_builder_page_slugs')->count());
+        }
+        $other = $this->commands->create($this->actor, ['title' => 'German'], ['de' => 'shared'])->page;
+        $lease = $this->locks->acquire($this->actor, $page->id);
+        $saved = $this->commands->saveMetadata($this->actor, $page->id, $lease->token, 0, [], ['en' => 'shared']);
+        $this->assertSame(0, $saved->page->write_version);
+        $this->assertSame('shared', $other->slugs()->sole()->slug);
+    }
+
+    public function test_unrelated_database_constraints_are_not_reported_as_duplicate_urls(): void
+    {
+        $page = $this->commands->create($this->actor, ['title' => 'Original'])->page;
+        PageSlug::creating(function () use ($page): void {
+            DB::table('site_builder_pages')->insert(['id' => $page->id, 'title' => 'Duplicate primary key']);
+        });
+        $this->expectException(UniqueConstraintViolationException::class);
+        $this->commands->create($this->actor, ['title' => 'New page'], ['en' => 'valid-path']);
     }
 
     public function test_unknown_nodes_can_survive_sibling_edits_but_cannot_be_changed_added_or_published(): void

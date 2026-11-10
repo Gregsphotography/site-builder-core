@@ -83,6 +83,20 @@ class PublicPagesTest extends DatabaseTestCase
         $this->get('/guides/getting-started')->assertNotFound();
     }
 
+    public function test_zero_slug_resolves_in_each_locale_and_under_a_public_prefix(): void
+    {
+        $this->page(['en' => 'home', 'de' => 'home'], ['published_content' => $this->document('Home only')]);
+        $zero = $this->page(['en' => '0', 'de' => '0']);
+        foreach (['/0', '/en/0', '/de/0'] as $path) {
+            $this->get($path)->assertOk()->assertSee('Live page')->assertDontSee('Home only');
+        }
+        $this->get('http://localhost/0/?test=1')->assertRedirect('/0?test=1')->assertStatus(301);
+        config(['site-builder.routes.prefix' => '/pages']);
+        $this->assertSame('/pages/0', app(PageUrlResolver::class)->path($zero, 'en'));
+        $this->get('/pages/0')->assertOk()->assertSee('Live page');
+        $this->get('/pages/de/0')->assertOk()->assertSee('Live page');
+    }
+
     public function test_host_routes_take_precedence_and_current_slug_beats_redirect_even_when_unpublished(): void
     {
         $page = $this->page(['en' => 'host']);

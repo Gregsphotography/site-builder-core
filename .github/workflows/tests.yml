@@ -1,5 +1,10 @@
 name: Package tests
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
@@ -61,8 +66,11 @@ jobs:
           $connection->exec('CREATE DATABASE `site_builder_package_graph_target_test` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
           PHP
       - run: php tools/dependencies.php ${{ matrix.dependencies }}
+      - name: Audit the resolved dependency lock
+        run: COMPOSER=.composer-stage.json composer audit --locked --no-interaction
       - run: composer validate --strict
       - run: npm ci --ignore-scripts --no-fund --no-audit
+      - run: npm audit --audit-level=low
       - run: npm run build:check
       - run: npm test
       - run: composer test

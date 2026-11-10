@@ -1,5 +1,5 @@
 # Changelog
 
-## 0.3.0-rc.9 — staged
+## 0.3.0-rc.10 — staged
 
-Adds branding/navigation snapshots, optional gallery/lightbox, testimonials, editable team/process/pricing patterns, guided setup and read-only diagnostics. New distribution uses gregsphotography package names and MIT. Existing content v1 and native exchange v3 remain unchanged.
+Fixes duplicate and invalid URL validation, literal zero URL paths, editor tab layout and accepted focus visibility, read-only history messaging, and repeated media schema queries. CI audits dependencies and avoids duplicate feature-branch runs. No database migration or content-format change is required.
