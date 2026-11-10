@@ -19,12 +19,16 @@ final readonly class PropertyDefinition
         public array $properties = [],
         public ?self $items = null,
         public string $mediaKind = 'image',
+        public ?string $revisionKind = null,
     ) {
         if (! in_array($kind, ['text', 'html', 'boolean', 'number', 'enum', 'token', 'url', 'media', 'page', 'revision', 'object', 'list'], true)) {
             throw new InvalidArgumentException('Unknown property kind.');
         }
         if (! in_array($mediaKind, ['image', 'video', 'track'], true)) {
             throw new InvalidArgumentException('Unknown media kind.');
+        }
+        if ($revisionKind !== null && ! in_array($revisionKind, ['section', 'header', 'footer', 'design', 'overlay'], true)) {
+            throw new InvalidArgumentException('Unknown revision resource kind.');
         }
         foreach ($properties as $key => $definition) {
             if (! is_string($key) || ! $definition instanceof self) {
@@ -68,9 +72,9 @@ final readonly class PropertyDefinition
         return new self('page', $translated, $nullable);
     }
 
-    public static function revision(bool $nullable = false): self
+    public static function revision(bool $nullable = false, ?string $revisionKind = null): self
     {
-        return new self('revision', nullable: $nullable);
+        return new self('revision', nullable: $nullable, revisionKind: $revisionKind);
     }
 
     /** @param array<string, self> $properties */

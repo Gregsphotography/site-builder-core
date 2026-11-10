@@ -6,12 +6,16 @@ namespace SiteBuilder\Core\Routing;
 
 use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
+use SiteBuilder\Core\Discovery\SearchController;
 
 final class SiteRoutes
 {
     public static function register(): void
     {
         Route::middleware(config('site-builder.routes.middleware', ['web']))->group(function (): void {
+            if (config('site-builder.discovery.enabled', false)) {
+                Route::get(self::publicPrefix().'/_site-builder/search/suggest', SearchController::class)->middleware('throttle:60,1')->name('site-builder.search.suggest');
+            }
             if (config('site-builder.routes.preview', true)) {
                 Route::get(self::previewPrefix().'/{page}/{locale}', PreviewController::class)->name('site-builder.preview');
             }

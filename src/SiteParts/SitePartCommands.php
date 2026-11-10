@@ -12,6 +12,7 @@ use Illuminate\Validation\ValidationException;
 use SiteBuilder\Core\Components\ComponentRegistry;
 use SiteBuilder\Core\Composition\CompositionData;
 use SiteBuilder\Core\Composition\CompositionResolver;
+use SiteBuilder\Core\Composition\OverlaySettings;
 use SiteBuilder\Core\Content\CanonicalJson;
 use SiteBuilder\Core\Content\Document;
 use SiteBuilder\Core\Content\DocumentValidator;
@@ -38,7 +39,8 @@ final class SitePartCommands
             if ($kind === 'design') {
                 throw ValidationException::withMessages(['payload' => 'Choose an explicit trusted theme before creating a site-design resource.']);
             }
-            $payload = SitePartPayload::document($kind, new Document);
+            $document = $kind === 'overlay' ? OverlaySettings::with(new Document, app(LocaleCatalog::class)->default(), $metadata['name']) : new Document;
+            $payload = SitePartPayload::document($kind, $document);
         }
         if ($payload->kind !== $kind) {
             throw ValidationException::withMessages(['kind' => 'Site-part kinds and typed payloads must agree.']);
@@ -224,11 +226,15 @@ final class SitePartCommands
         $this->composition->withCurrentReads(function () use ($actor, $before, $after): void {
             $existing = [];
             foreach ($before === null ? [] : CompositionData::references($before) as $path => $entry) {
-                $existing[$entry['nodeId'] ?? $path] = $entry['reference'];
+                $key = ($entry['nodeId'] ?? $path).':'.$this->json->digest($entry['reference']);
+                $existing[$key] = ($existing[$key] ?? 0) + 1;
             }
             foreach (CompositionData::references($after) as $path => $entry) {
-                $key = $entry['nodeId'] ?? $path;
-                $new = ! isset($existing[$key]) || ! $this->json->equals($existing[$key], $entry['reference']);
+                $key = ($entry['nodeId'] ?? $path).':'.$this->json->digest($entry['reference']);
+                $new = ($existing[$key] ?? 0) === 0;
+                if (! $new) {
+                    $existing[$key]--;
+                }
                 $this->composition->revision($entry['reference'], $entry['kind'], $actor, $new);
             }
         });

@@ -125,7 +125,7 @@ final class CompositionResolver
                         $checkPresentation($entry->children);
                     }
                 };
-                $checkPresentation([...$resolution->body, ...($resolution->header ?? []), ...($resolution->footer ?? [])]);
+                $checkPresentation([...$resolution->body, ...($resolution->header ?? []), ...($resolution->footer ?? []), ...array_merge([], ...array_column($resolution->overlays, 'nodes'))]);
                 foreach ($resolution->documents as $source) {
                     foreach (app(DocumentValidator::class)->diagnostics($source, context: $context) as $diagnostic) {
                         if (! in_array($diagnostic->code, ['unknown_property', 'unconfigured_locale'], true)) {
@@ -151,6 +151,7 @@ final class CompositionResolver
         }
         $usage = ['nodes' => 0, 'bytes' => strlen($this->codec->encode($document)), 'mounts' => 0, 'revisions' => 0];
         $references = [];
+        $overlays = [];
         $documents = [];
         $distinct = [];
         $limits = ['nodes' => $this->limit('max_nodes', 1000), 'bytes' => $this->limit('max_bytes', 2097152), 'mounts' => $this->limit('max_mounts', 256), 'revisions' => $this->limit('max_revisions', 128)];
@@ -208,7 +209,7 @@ final class CompositionResolver
 
             return [...$head, ...$walk($source->nodes, $source, $ancestry, $chain, $depth, $structuralDepth, $selectable, $binding, true, $designAncestors), ...$tail];
         };
-        $walk = function (array $nodes, Document $source, array $ancestry, array $chain, int $depth, int $structuralDepth, ?string $selectable, ?string $binding, bool $mounted, array $designAncestors) use (&$walk, &$mount, &$usage, $check, $context, $document): array {
+        $walk = function (array $nodes, Document $source, array $ancestry, array $chain, int $depth, int $structuralDepth, ?string $selectable, ?string $binding, bool $mounted, array $designAncestors) use (&$walk, &$mount, &$usage, $check, $context, $document, &$overlays): array {
             $result = [];
             foreach ($nodes as $node) {
                 if ($depth > $this->limit('max_depth', 32)) {
@@ -233,7 +234,14 @@ final class CompositionResolver
                         if (CompositionData::payload($source) === null) {
                             $this->fail('Declared global revision properties require the owner composition capability.');
                         }
-                        $mount(PublishedPartReference::from($occurrence->value), null, $ancestry, [...$chain, 'property:'.$node->id.':'.$occurrence->path], $depth + 1, $structuralDepth, $selectable, $binding, $designAncestors);
+                        $reference = PublishedPartReference::from($occurrence->value);
+                        if ($occurrence->revisionKind === 'overlay') {
+                            $identity = OverlaySettings::id($reference, $context);
+                            $entries = $mount($reference, 'overlay', $ancestry, ['overlay:'.$reference->revisionId], $depth + 1, 0, null, 'overlay', []);
+                            $overlays[$identity] = ['reference' => $reference, 'nodes' => $entries];
+                        } else {
+                            $mount($reference, $occurrence->revisionKind, $ancestry, [...$chain, 'property:'.$node->id.':'.$occurrence->path], $depth + 1, $structuralDepth, $selectable, $binding, $designAncestors);
+                        }
                     }
                 }
                 $definition = $this->components->resolve($node->type);
@@ -283,7 +291,24 @@ final class CompositionResolver
         }
         $check();
 
-        return new CompositionResolution($document, $body, $header, $footer, $references, $documents, $usage);
+        $attached = [];
+        $attach = function (array $entries) use (&$attach, &$attached, $overlays, $context): void {
+            foreach ($entries as $entry) {
+                if ($entry->suppressed || $entry->node->visibility === 'hidden') {
+                    continue;
+                }
+                foreach (app(ResolvedResourceReferences::class)->overlays($entry->node, $context) as $identity => $reference) {
+                    if (! isset($attached[$identity]) && isset($overlays[$identity])) {
+                        $attached[$identity] = $overlays[$identity];
+                        $attach($overlays[$identity]['nodes']);
+                    }
+                }
+                $attach($entry->children);
+            }
+        };
+        $attach([...$body, ...($header ?? []), ...($footer ?? [])]);
+
+        return new CompositionResolution($document, $body, $header, $footer, $references, $documents, $usage, $attached);
     }
 
     public function lockMutation(?Document $before, ?Document $after, RenderContext $context, ?Authenticatable $actor = null, ?string $ownerResourceId = null): array

@@ -257,6 +257,24 @@
               },
               "maxItems": 9,
               "uniqueItems": true
+            },
+            "overlay": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "view",
+                  "create",
+                  "update",
+                  "preview",
+                  "publish",
+                  "restore",
+                  "delete",
+                  "use",
+                  "withdraw"
+                ]
+              },
+              "maxItems": 9,
+              "uniqueItems": true
             }
           },
           "additionalProperties": false

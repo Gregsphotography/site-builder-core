@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'discovery' => ['enabled' => false, 'results_page' => null],
     'locales' => ['en' => ['label' => 'English', 'dir' => 'ltr']],
     'layout' => 'site-builder::layouts.site',
     'routes' => ['enabled' => true, 'prefix' => '', 'middleware' => ['web'], 'public' => true, 'preview' => true, 'preview_prefix' => '_site-builder/preview'],

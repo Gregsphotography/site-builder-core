@@ -18,13 +18,23 @@ abstract class TestCase extends Orchestra
     protected function defineEnvironment($app): void
     {
         $driver = getenv('DB_CONNECTION') ?: 'sqlite';
-        if (! in_array($driver, ['sqlite', 'mysql'], true)) {
-            throw new LogicException('Foundation tests support isolated SQLite or MySQL only.');
+        if (! in_array($driver, ['sqlite', 'mysql', 'pgsql'], true)) {
+            throw new LogicException('Foundation tests support isolated SQLite, MySQL or PostgreSQL only.');
         }
         $app['config']->set('database.default', $driver);
         if ($driver === 'sqlite') {
             $app['config']->set('database.connections.sqlite.database', ':memory:');
             $app['config']->set('database.connections.sqlite.foreign_key_constraints', true);
+        } elseif ($driver === 'pgsql') {
+            $database = getenv('DB_DATABASE') ?: '';
+            if (! str_starts_with($database, 'site_builder_') || ! str_ends_with($database, '_test')) {
+                throw new LogicException('PostgreSQL tests require a dedicated site_builder_*_test database.');
+            }
+            $app['config']->set('database.connections.pgsql', [
+                'driver' => 'pgsql', 'host' => getenv('DB_HOST') ?: '127.0.0.1', 'port' => getenv('DB_PORT') ?: '5432',
+                'database' => $database, 'username' => getenv('DB_USERNAME') ?: 'postgres', 'password' => getenv('DB_PASSWORD') ?: '',
+                'charset' => 'utf8', 'prefix' => '', 'search_path' => 'public', 'sslmode' => 'prefer',
+            ]);
         } else {
             $database = getenv('DB_DATABASE') ?: '';
             if (! str_starts_with($database, 'site_builder_') || ! str_ends_with($database, '_test')) {

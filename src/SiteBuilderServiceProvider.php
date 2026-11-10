@@ -55,6 +55,14 @@ final class SiteBuilderServiceProvider extends ServiceProvider
         $this->app->singleton(ComponentRegistry::class);
         $this->app->afterResolving(ComponentRegistry::class, fn (ComponentRegistry $registry) => $registry->register(GlobalReferenceDefinition::class));
         $this->app->singleton(ReferenceScanner::class);
+        $this->app->singleton(Discovery\ContentTextRegistry::class);
+        $this->app->singleton(Discovery\ContentSources::class, function ($app): Discovery\ContentSources {
+            $sources = new Discovery\ContentSources;
+            $sources->register('builder.pages', $app->make(Discovery\PublishedPagesSource::class));
+
+            return $sources;
+        });
+        $this->app->tag([Discovery\DiscoveryConstraint::class], Contracts\DocumentConstraint::class);
         $this->app->singleton(StartingPointRegistry::class);
         $this->app->singleton(SnapshotSourceRegistry::class);
         $this->app->singleton(DesignCatalog::class);
@@ -64,6 +72,13 @@ final class SiteBuilderServiceProvider extends ServiceProvider
         $this->app->singleton(LayoutRegistry::class);
         $this->app->singleton(Rendering\PublicAssetRegistry::class);
         $this->app->scoped(Rendering\PublicAssets::class);
+        $this->app->tag([Composition\OverlayConstraint::class], Contracts\DocumentConstraint::class);
+        $this->app->afterResolving(Rendering\PublicAssetRegistry::class, function ($registry): void {
+            $digest = substr(hash_file('sha256', __DIR__.'/../resources/dist/overlays.js'), 0, 16);
+            if (! $registry->has('core.overlays')) {
+                $registry->register('core.overlays', new Rendering\PublicAsset('module', '/vendor/site-builder/overlays.js?v='.$digest));
+            }
+        });
         $this->app->singleton(ExchangeSchema::class);
         $this->app->afterResolving(ExchangeSchema::class, function (ExchangeSchema $schema): void {
             if (config('site-builder.site_parts.exchange', false)) {
@@ -86,6 +101,9 @@ final class SiteBuilderServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        foreach ([Models\Page::class, Models\PageSlug::class, SiteParts\SitePartRevision::class] as $model) {
+            $model::observe(Discovery\DiscoveryObserver::class);
+        }
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'site-builder');
         Blade::directive('siteBuilderAssets', fn (): string => '<?php echo app(\\SiteBuilder\\Core\\Rendering\\PublicAssets::class)->html(); ?>');
         $this->app->booted(function (): void {
@@ -94,8 +112,9 @@ final class SiteBuilderServiceProvider extends ServiceProvider
             }
         });
         if ($this->app->runningInConsole()) {
-            $this->commands([Commands\SetupCommand::class, Commands\DoctorCommand::class, Commands\CanonicalCheckCommand::class, InstallCommand::class, ExportCommand::class, ImportCommand::class, SavedSectionsInstallCommand::class, DraftHistory\InstallCommand::class, PruneCommand::class, SiteParts\InstallCommand::class, AuditCommand::class, SiteParts\PruneCommand::class]);
+            $this->commands([Discovery\DiscoveryInstallCommand::class, Discovery\DiscoveryRebuildCommand::class, Discovery\DiscoveryDoctorCommand::class, Commands\SetupCommand::class, Commands\DoctorCommand::class, Commands\CanonicalCheckCommand::class, InstallCommand::class, ExportCommand::class, ImportCommand::class, SavedSectionsInstallCommand::class, DraftHistory\InstallCommand::class, PruneCommand::class, SiteParts\InstallCommand::class, AuditCommand::class, SiteParts\PruneCommand::class]);
             $this->publishes([__DIR__.'/../config/site-builder.php' => config_path('site-builder.php')], 'site-builder-config');
+            $this->publishesMigrations([__DIR__.'/../database/discovery-migrations' => database_path('migrations')], 'site-builder-discovery-migrations');
             $this->publishesMigrations([__DIR__.'/../database/migrations' => database_path('migrations')], 'site-builder-migrations');
             $this->publishesMigrations([__DIR__.'/../database/site-parts-migrations' => database_path('migrations')], 'site-builder-site-parts-migrations');
             $this->publishesMigrations([__DIR__.'/../database/history-migrations' => database_path('migrations')], 'site-builder-history-migrations');

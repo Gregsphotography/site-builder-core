@@ -45,7 +45,7 @@ final class SitePartCatalog
     {
         $identity = $this->access->authorize($actor, 'viewAny', SitePart::class);
         $search = mb_substr(trim($search ?? ''), 0, 255);
-        if ($kind !== null && ! in_array($kind, ['section', 'header', 'footer', 'design'], true)) {
+        if ($kind !== null && ! in_array($kind, ['section', 'header', 'footer', 'design', 'overlay'], true)) {
             throw ValidationException::withMessages(['kind' => 'Unknown site-part kind.']);
         }
         $queryDigest = $this->json->digest([$identity->id, $identity->type, $search, $kind]);

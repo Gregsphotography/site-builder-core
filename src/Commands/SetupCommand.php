@@ -146,7 +146,7 @@ final class SetupCommand extends Command
             $value->authorization->actorKeys = array_values(array_unique(array_map('trim', explode(',', (string) $this->ask('Explicit existing opaque actor keys, comma separated')))));
             $value->authorization->pageAbilities = $this->abilities('Page', ['view', 'create', 'update', 'preview', 'publish', 'restore', 'delete']);
             if ($value->features->siteParts) {
-                foreach (['section', 'header', 'footer', 'site-design'] as $kind) {
+                foreach (['section', 'header', 'footer', 'site-design', 'overlay'] as $kind) {
                     if ($this->confirm('Grant selected actors any '.$kind.' abilities?', false)) {
                         $value->authorization->sitePartAbilities->{$kind} = $this->abilities($kind, ['view', 'create', 'update', 'preview', 'publish', 'restore', 'delete', 'use', 'withdraw']);
                     }

@@ -51,6 +51,9 @@ final class ContentOccurrences
             if ($regions) {
                 $walk($resolution->header ?? [], 'header', true);
                 $walk($resolution->footer ?? [], 'footer', true);
+                foreach ($resolution->overlays as $id => $overlay) {
+                    $walk($overlay['nodes'], 'overlay:'.$id, true);
+                }
             }
         } else {
             $walk($document->nodes, 'body', false);

@@ -46,7 +46,13 @@ final class ContentDependencies
                 }
             }
         }
-        DB::table('site_builder_content_dependencies')->where('owner_kind', 'page-revision')->whereNotIn('owner_id', DB::table('site_builder_page_revisions')->select('id'))->delete();
+        $revisions = DB::table('site_builder_page_revisions');
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            $revisions->selectRaw('CAST(id AS text)');
+        } else {
+            $revisions->select('id');
+        }
+        DB::table('site_builder_content_dependencies')->where('owner_kind', 'page-revision')->whereNotIn('owner_id', $revisions)->delete();
     }
 
     public function syncPart(SitePart $part): void

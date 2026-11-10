@@ -57,7 +57,7 @@ final class CompositionData
         foreach (app(ReferenceScanner::class)->scan($document) as $occurrence) {
             if ($occurrence->kind === 'revision') {
                 [$nodePath, $type] = $paths[$occurrence->nodeId];
-                $references[$nodePath.$occurrence->path] = ['reference' => PublishedPartReference::from($occurrence->value), 'kind' => $type === 'core.global-reference' ? 'section' : null, 'nodeId' => $occurrence->nodeId];
+                $references[$nodePath.$occurrence->path] = ['reference' => PublishedPartReference::from($occurrence->value), 'kind' => $type === 'core.global-reference' ? 'section' : $occurrence->revisionKind, 'nodeId' => $occurrence->nodeId];
             }
         }
 

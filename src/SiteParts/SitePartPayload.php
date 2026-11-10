@@ -21,8 +21,8 @@ final readonly class SitePartPayload implements JsonSerializable
 
     public static function document(string $kind, Document $document): self
     {
-        if (! in_array($kind, ['section', 'header', 'footer'], true)) {
-            throw new InvalidArgumentException('Document site parts must be section, header or footer.');
+        if (! in_array($kind, ['section', 'header', 'footer', 'overlay'], true)) {
+            throw new InvalidArgumentException('Document site parts must be section, header, footer or overlay.');
         }
         app(DocumentCodec::class)->encode($document);
 

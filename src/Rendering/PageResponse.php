@@ -40,14 +40,14 @@ final class PageResponse
         return $this->render($contextPage, $locale, true, rootIds: $rootIds);
     }
 
-    public function render(Page $page, string $locale, bool $preview = false, ?array $editor = null, ?array $rootIds = null): Response
+    public function render(Page $page, string $locale, bool $preview = false, ?array $editor = null, ?array $rootIds = null, ?PublicQuery $query = null): Response
     {
-        return app(PublicAssets::class)->scope(fn (): Response => $this->renderResponse($page, $locale, $preview, $editor, $rootIds));
+        return app(PublicAssets::class)->scope(fn (): Response => $this->renderResponse($page, $locale, $preview, $editor, $rootIds, $preview ? null : $query));
     }
 
-    private function renderResponse(Page $page, string $locale, bool $preview, ?array $editor, ?array $rootIds): Response
+    private function renderResponse(Page $page, string $locale, bool $preview, ?array $editor, ?array $rootIds, ?PublicQuery $query): Response
     {
-        $context = new RenderContext($locale, $preview ? 'preview' : 'public', (int) $page->id, $page->layout);
+        $context = new RenderContext($locale, $preview ? 'preview' : 'public', (int) $page->id, $page->layout, $query);
         $previous = app()->getLocale();
         try {
             app()->setLocale($locale);

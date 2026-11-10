@@ -82,7 +82,7 @@ final class NativeGraphMapper
             app(PageAccess::class)->authorize($actor, 'create', Page::class);
         }
         foreach (array_unique(array_column($tables['site_parts'] ?? [], 'kind')) as $kind) {
-            if (! in_array($kind, ['section', 'header', 'footer', 'design'], true)) {
+            if (! in_array($kind, ['section', 'header', 'footer', 'design', 'overlay'], true)) {
                 $this->fail('Only supported explicit site-part kinds can be mapped.');
             }
             app(SitePartAccess::class)->authorize($actor, 'create', [SitePart::class, $kind]);

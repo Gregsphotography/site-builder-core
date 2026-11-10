@@ -1,13 +1,5 @@
 # Changelog
 
-## 0.4.0-rc.4 — staged
+## 0.5.0-rc.1 — staged
 
-Version alignment for the component example release. Core runtime behaviour is unchanged from 0.4.0-rc.3.
-
-## 0.4.0-rc.3 — staged
-
-Version alignment for the illustrated editor release. Core runtime behaviour is unchanged from 0.4.0-rc.2.
-
-## 0.4.0-rc.2 — staged
-
-Adds composition primitives and editable patterns; accessible tabs, accordion, tables, contents and breadcrumbs; uploaded/embedded video, captions and location; optional published-form verification, enquiry inbox, managed notification profiles and durable outbox; independent on-page cards/gallery search and tag filters. Existing document v1/exchange v3 remain stable. Forms require explicit install/enable and host policies/queue; no consumer deployment is included.
+Adds shared public content sources/indexing, dynamic listings/filtering, live and full-page search, reusable revision-pinned popups/drawers, image comparison/hotspots, one carousel engine and authored/dynamic timelines. Preserves component library illustrations/examples and packages the demo PostgreSQL authoring compatibility fixes. New distribution uses gregsphotography package names and MIT. Existing content v1 and native exchange v3 remain unchanged.

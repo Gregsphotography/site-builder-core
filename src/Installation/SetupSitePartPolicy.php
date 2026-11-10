@@ -11,7 +11,7 @@ class SetupSitePartPolicy
 {
     public function viewAny(Authenticatable $actor): bool
     {
-        return array_any(['section', 'header', 'footer', 'design'], fn ($kind) => $this->permit($actor, 'view', $kind));
+        return array_any(['section', 'header', 'footer', 'design', 'overlay'], fn ($kind) => $this->permit($actor, 'view', $kind));
     }
 
     public function create(Authenticatable $actor, string $kind): bool

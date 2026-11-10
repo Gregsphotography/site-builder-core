@@ -49,7 +49,13 @@ final class DocumentCopies
 
             return new Node($id, $node->type, $node->version, new JsonObject($values->props), new JsonObject($values->translations), $node->visibility, array_map($clone, $node->children), $node->extensions);
         };
-        $document = new Document(array_map($clone, $source->document->nodes), $source->document->extensions);
+        $root = (object) ['extensions' => $source->document->extensions->toObject()];
+        foreach ($map->all() as $entry) {
+            if ($entry['nodeId'] === '@document') {
+                $this->replace($root, $entry['path'], $entry['value']);
+            }
+        }
+        $document = new Document(array_map($clone, $source->document->nodes), new JsonObject($root->extensions));
         $this->codec->encode($document);
 
         return new CopyResult($document, $ids);

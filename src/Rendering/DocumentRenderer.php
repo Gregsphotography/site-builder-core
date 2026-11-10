@@ -9,6 +9,7 @@ use Illuminate\View\ComponentAttributeBag;
 use SiteBuilder\Core\Components\ComponentRegistry;
 use SiteBuilder\Core\Composition\CompositionData;
 use SiteBuilder\Core\Composition\CompositionResolver;
+use SiteBuilder\Core\Composition\OverlaySettings;
 use SiteBuilder\Core\Content\Document;
 use SiteBuilder\Core\Content\DocumentValidator;
 use SiteBuilder\Core\Content\JsonObject;
@@ -152,7 +153,17 @@ final class DocumentRenderer
         $header = $resolution->header === null ? null : new HtmlString($walk($resolution->header));
         $footer = $resolution->footer === null ? null : new HtmlString($walk($resolution->footer));
 
-        return $this->processed(new RenderResult(new HtmlString($body), $diagnostics, $graph, $header, $footer), $context);
+        $processed = $this->processed(new RenderResult(new HtmlString($body), $diagnostics, $graph, $header, $footer), $context);
+        $overlayHtml = '';
+        foreach ($resolution->overlays as $identity => $overlay) {
+            $source = $resolution->documents[$overlay['reference']->revisionId];
+            $overlayHtml .= view('site-builder::overlays.panel', ['identity' => $identity, 'settings' => OverlaySettings::values($source, $context->locale), 'content' => $walk($overlay['nodes'])])->render();
+        }
+        if ($overlayHtml !== '' && $context->mode === 'public') {
+            app(PublicAssets::class)->request('core.overlays');
+        }
+
+        return new RenderResult(new HtmlString($processed->html->toHtml().$overlayHtml), $processed->diagnostics, $processed->structuredData, $processed->headerSlot, $processed->footerSlot);
     }
 
     private function processed(RenderResult $result, RenderContext $context): RenderResult

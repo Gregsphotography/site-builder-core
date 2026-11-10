@@ -3,7 +3,7 @@ import { readFile, mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const root=resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const entries=[["css/site-builder.css", "site-builder.css"], ["js/preview.js", "preview.js"]];
+const entries=[["css/site-builder.css", "site-builder.css"], ["js/preview.js", "preview.js"], ["js/overlays.js", "overlays.js"]];
 for(const [entry,target] of entries){
  const outfile=resolve(root,'resources/dist',target);
  const options={entryPoints:[resolve(root,'resources',entry)],outfile,minify:true,bundle:true,format:'esm',target:'es2022',legalComments:'none',logLevel:'warning'};

@@ -18,6 +18,11 @@ final class PublicAssetRegistry
         $this->assets[$id] = $asset;
     }
 
+    public function has(string $id): bool
+    {
+        return isset($this->assets[$id]);
+    }
+
     public function get(string $id): PublicAsset
     {
         return $this->assets[$id] ?? throw new InvalidArgumentException('Unknown public asset.');

@@ -27,7 +27,7 @@ final class SectionSourceScope
         self::assertSupported($document);
         $extensions = $document->extensions->toObject();
         $renderFeatures = $document->extensions->get('site-builder.render');
-        unset($extensions->{'site-builder.render'});
+        unset($extensions->{'site-builder.render'}, $extensions->{'site-builder.discovery'}, $extensions->{'site-builder.overlay'});
         $digest = null;
         if (property_exists($extensions, 'site-builder.copy')) {
             $history = $extensions->{'site-builder.copy'};

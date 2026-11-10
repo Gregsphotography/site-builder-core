@@ -102,7 +102,7 @@ final class SitePartExchange
 
                 continue;
             }
-            if (! in_array($row['kind'], ['section', 'header', 'footer', 'design'], true) || ! is_string($row['name']) || trim($row['name']) === '' || mb_strlen($row['name']) > 255 || ($row['description'] !== null && (! is_string($row['description']) || mb_strlen($row['description']) > 4000)) || ! self::counter($row['write_version'])) {
+            if (! in_array($row['kind'], ['section', 'header', 'footer', 'design', 'overlay'], true) || ! is_string($row['name']) || trim($row['name']) === '' || mb_strlen($row['name']) > 255 || ($row['description'] !== null && (! is_string($row['description']) || mb_strlen($row['description']) > 4000)) || ! self::counter($row['write_version'])) {
                 $issue('invalid_site_part_descriptor', $path, 'Resource kind, bounded metadata and lossless write version must be explicit.');
             }
             foreach (['created', 'updated'] as $actor) {

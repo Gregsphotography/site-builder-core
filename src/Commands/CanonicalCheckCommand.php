@@ -21,8 +21,31 @@ final class CanonicalCheckCommand extends Command
         $report = ['format' => 'laravel-site-builder/canonical-check', 'version' => 1, 'policy' => CanonicalJson::NUMERIC_POLICY, 'status' => 'compatible', 'checkedJsonValues' => 0, 'issues' => []];
         try {
             $json->encode(null);
-            $snapshot = $exchange->export(DB::connection(), 'canonical-preflight');
-            foreach ($snapshot->tables() as $kind => $rows) {
+            $connection = DB::connection();
+            if ($connection->getDriverName() === 'pgsql') {
+                $read = function () use ($connection, $schema): array {
+                    $tables = [];
+                    foreach ($schema->tables() as $kind => $definition) {
+                        $tables[$kind] = $connection->table($definition['table'])->orderBy('id')->get()->map(fn (object $row): array => $schema->normalize($kind, get_object_vars($row)))->all();
+                    }
+
+                    return $tables;
+                };
+                if ($connection->transactionLevel() > 0) {
+                    $tables = $read();
+                } else {
+                    $connection->beginTransaction();
+                    try {
+                        $connection->statement('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
+                        $tables = $read();
+                    } finally {
+                        $connection->rollBack();
+                    }
+                }
+            } else {
+                $tables = $exchange->export($connection, 'canonical-preflight')->tables();
+            }
+            foreach ($tables as $kind => $rows) {
                 foreach ($rows as $row) {
                     foreach ($schema->table($kind)['json'] as $column) {
                         if (($row[$column] ?? null) === null) {

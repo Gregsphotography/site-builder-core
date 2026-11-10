@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SiteBuilder\Core\Components;
 
 use SiteBuilder\Core\Content\Document;
+use SiteBuilder\Core\Discovery\DiscoveryMetadata;
 use stdClass;
 
 final class ReferenceScanner
@@ -21,7 +22,7 @@ final class ReferenceScanner
                 return;
             }
             if (in_array($definition->kind, ['page', 'media', 'revision'], true)) {
-                $references[] = new Reference($nodeId, $locale, $path, $definition->kind, $value);
+                $references[] = new Reference($nodeId, $locale, $path, $definition->kind, $value, $definition->revisionKind);
             } elseif ($definition->kind === 'list' && is_array($value)) {
                 foreach ($value as $index => $item) {
                     $scanProperty($item, $definition->items, $nodeId, $locale, $path.'/'.$index);
@@ -56,6 +57,15 @@ final class ReferenceScanner
             }
         };
         $walk($document->nodes);
+
+        $discovery = $document->extensions->get(DiscoveryMetadata::KEY);
+        if ($discovery instanceof stdClass && ($discovery->version ?? null) === 1 && ($discovery->locales ?? null) instanceof stdClass) {
+            foreach ($discovery->locales as $locale => $values) {
+                if ($values instanceof stdClass && is_string($values->image ?? null) && $values->image !== '') {
+                    $references[] = new Reference('@document', (string) $locale, '/extensions/site-builder.discovery/locales/'.$escape((string) $locale).'/image', 'media', $values->image);
+                }
+            }
+        }
 
         return $references;
     }

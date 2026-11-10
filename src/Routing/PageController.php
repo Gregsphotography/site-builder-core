@@ -10,6 +10,7 @@ use SiteBuilder\Core\Models\PageRedirect;
 use SiteBuilder\Core\Models\PageSlug;
 use SiteBuilder\Core\Rendering\LocaleCatalog;
 use SiteBuilder\Core\Rendering\PageResponse;
+use SiteBuilder\Core\Rendering\PublicQuery;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
 final class PageController
@@ -57,6 +58,6 @@ final class PageController
             return redirect($canonicalPath.($request->getQueryString() ? '?'.$request->getQueryString() : ''), 301);
         }
 
-        return $response->render($page, $locale);
+        return $response->render($page, $locale, query: PublicQuery::fromRequest($request));
     }
 }
