@@ -35,8 +35,12 @@ $mode = $argv[6];
 $pageId = (int) $argv[3];
 $token = $argv[5];
 if ($mode === 'slug-rename') {
-    $pageId = app(PageCommands::class)->create($actor, ['title' => 'Original '.$argv[8]], ['en' => 'original-'.$argv[8]])->page->id;
+    $commands = app(PageCommands::class);
+    $created = $commands->create($actor, ['title' => 'Original '.$argv[8]], ['en' => 'original-'.$argv[8]]);
+    $pageId = $created->page->id;
     $token = app(PageLocks::class)->acquire($actor, $pageId)->token;
+    $published = $commands->publish($actor, $pageId, $token, $created->page->write_version, $created->draftDigest);
+    $staged = $commands->saveMetadata($actor, $pageId, $token, $published->page->write_version, ['title' => 'Renamed'], ['en' => 'contested-path']);
 }
 $barrier = $argv[7];
 if (realpath(dirname($barrier)) !== realpath(sys_get_temp_dir()) || ! str_starts_with(basename($barrier), 'site-builder-race-')) {
@@ -61,7 +65,7 @@ try {
     } elseif ($mode === 'slug-create') {
         app(PageCommands::class)->create($actor, ['title' => 'Contested create'], ['en' => 'contested-path']);
     } elseif ($mode === 'slug-rename') {
-        app(PageCommands::class)->saveMetadata($actor, $pageId, $token, 0, ['title' => 'Renamed'], ['en' => 'contested-path']);
+        $commands->publish($actor, $pageId, $token, $staged->page->write_version, $staged->draftDigest);
     } else {
         throw new RuntimeException('Unknown worker mode.');
     }

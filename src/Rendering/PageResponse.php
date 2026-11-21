@@ -29,7 +29,7 @@ final class PageResponse
         if ($rootIds === null) {
             app(RenderFeatureRegistry::class)->projectSections($document);
         }
-        $context = new RenderContext($locale, 'preview', $page->id, $page->layout);
+        $context = new RenderContext($locale, 'preview', $page->id, $page->draftLayout());
         if ($rootIds === null) {
             $document = app(DesignOperations::class)->admitComposition($page->draft_content ?? new Document, $document->nodes, $context);
         }
@@ -47,6 +47,9 @@ final class PageResponse
 
     private function renderResponse(Page $page, string $locale, bool $preview, ?array $editor, ?array $rootIds, ?PublicQuery $query): Response
     {
+        if ($preview) {
+            $page = $page->draftView();
+        }
         $context = new RenderContext($locale, $preview ? 'preview' : 'public', (int) $page->id, $page->layout, $query);
         $previous = app()->getLocale();
         try {

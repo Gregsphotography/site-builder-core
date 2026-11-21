@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SiteBuilder\Core;
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use SiteBuilder\Core\Clipboard\ClipboardServiceProvider;
@@ -112,7 +113,8 @@ final class SiteBuilderServiceProvider extends ServiceProvider
             }
         });
         if ($this->app->runningInConsole()) {
-            $this->commands([Discovery\DiscoveryInstallCommand::class, Discovery\DiscoveryRebuildCommand::class, Discovery\DiscoveryDoctorCommand::class, Commands\SetupCommand::class, Commands\DoctorCommand::class, Commands\CanonicalCheckCommand::class, InstallCommand::class, ExportCommand::class, ImportCommand::class, SavedSectionsInstallCommand::class, DraftHistory\InstallCommand::class, PruneCommand::class, SiteParts\InstallCommand::class, AuditCommand::class, SiteParts\PruneCommand::class]);
+            $this->callAfterResolving(Schedule::class, fn ($schedule) => $schedule->command('site-builder:publish-due')->everyMinute());
+            $this->commands([Publishing\PublishDueCommand::class, Discovery\DiscoveryInstallCommand::class, Discovery\DiscoveryRebuildCommand::class, Discovery\DiscoveryDoctorCommand::class, Commands\SetupCommand::class, Commands\DoctorCommand::class, Commands\CanonicalCheckCommand::class, InstallCommand::class, ExportCommand::class, ImportCommand::class, SavedSectionsInstallCommand::class, DraftHistory\InstallCommand::class, PruneCommand::class, SiteParts\InstallCommand::class, AuditCommand::class, SiteParts\PruneCommand::class]);
             $this->publishes([__DIR__.'/../config/site-builder.php' => config_path('site-builder.php')], 'site-builder-config');
             $this->publishesMigrations([__DIR__.'/../database/discovery-migrations' => database_path('migrations')], 'site-builder-discovery-migrations');
             $this->publishesMigrations([__DIR__.'/../database/migrations' => database_path('migrations')], 'site-builder-migrations');

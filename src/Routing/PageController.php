@@ -45,6 +45,9 @@ final class PageController
         $page = $translation?->page;
         if ($page === null) {
             $redirect = PageRedirect::query()->where('locale', $locale)->where('from_slug', $slug)->first();
+            if ($translation === null && $redirect === null) {
+                app(MissingPaths::class)->record($request, $locale, $slug);
+            }
             $target = $redirect?->page;
             $url = $target !== null && $target->status === 'published' ? $urls->path($target, $locale) : null;
             abort_if($url === null, 404);

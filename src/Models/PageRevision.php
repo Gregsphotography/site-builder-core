@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use SiteBuilder\Core\Casts\DocumentCast;
+use SiteBuilder\Core\Casts\JsonValueCast;
 use SiteBuilder\Core\Database\Factories\PageRevisionFactory;
 
 class PageRevision extends Model
@@ -22,7 +23,7 @@ class PageRevision extends Model
 
     protected function casts(): array
     {
-        return ['content' => DocumentCast::class, 'created_at' => 'immutable_datetime', 'created_by' => 'string', 'published_from_version' => 'integer'];
+        return ['content' => DocumentCast::class, 'settings_snapshot' => JsonValueCast::class, 'created_at' => 'immutable_datetime', 'created_by' => 'string', 'published_from_version' => 'integer'];
     }
 
     protected static function newFactory(): PageRevisionFactory

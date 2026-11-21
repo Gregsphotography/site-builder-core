@@ -1,5 +1,5 @@
 # Changelog
 
-## 0.5.0-rc.3 — staged
+## 0.5.0-rc.4 — staged
 
-Adds shared public content sources/indexing, dynamic listings/filtering, live and full-page search, reusable revision-pinned popups/drawers, image comparison/hotspots, one carousel engine and authored/dynamic timelines. Preserves component library illustrations/examples and packages the demo PostgreSQL authoring compatibility fixes. New distribution uses gregsphotography package names and MIT. Existing content v1 and native exchange v3 remain unchanged. Includes idempotent discovery migration publication, padding-aware carousel initialization/resizing and matching public Git-tag dependencies for package CI.
+Adds standalone photo albums, shareable publication URLs and a Photo album block that follows the latest publication. Also ships client review and scheduled publishing, staged page settings, recoverable page trash, multilingual SEO and language switching, redirect and missing-path reports, accessibility checks, and a keyboard focus fix for the gallery lightbox.

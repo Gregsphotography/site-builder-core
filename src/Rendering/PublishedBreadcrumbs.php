@@ -19,7 +19,10 @@ final class PublishedBreadcrumbs implements BreadcrumbProvider
         if ($page === null) {
             return [];
         }
-        $slug = $page->slugs()->where('locale', $context->locale)->value('slug');
+        if ($context->mode === 'preview') {
+            $page = $page->draftView();
+        }
+        $slug = $page->slugs->firstWhere('locale', $context->locale)?->slug;
         $segments = is_string($slug) ? explode('/', $slug) : [];
         $paths = $segments === ['home'] ? [] : ['home'];
         for ($i = 1; $i < count($segments); $i++) {

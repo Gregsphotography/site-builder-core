@@ -138,10 +138,10 @@ final class SavedSectionCommands
                 $this->gate->forUser($actor)->authorize('share', $section);
             }
             $capture = $this->selected($page, $rootId);
-            app(CompositionResolver::class)->lockMutation(null, $capture['document'], new RenderContext(config('app.locale', 'en'), 'preview', $page->id, $page->layout), $actor);
+            app(CompositionResolver::class)->lockMutation(null, $capture['document'], new RenderContext(config('app.locale', 'en'), 'preview', $page->id, $page->draftLayout()), $actor);
             app(SitePartCommands::class)->validateNewPins($actor, null, $capture['document']);
             $section->save();
-            $this->append($section, $capture['document'], $identity, ['kind' => 'page', 'id' => (string) $page->id, 'version' => (string) $page->write_version, 'digest' => $this->json->digest($page->draft_content), 'rootIds' => [$rootId], 'copyHistoryDigest' => $capture['copyHistoryDigest'], 'renderLayout' => $page->layout]);
+            $this->append($section, $capture['document'], $identity, ['kind' => 'page', 'id' => (string) $page->id, 'version' => (string) $page->write_version, 'digest' => $this->json->digest($page->draft_content), 'rootIds' => [$rootId], 'copyHistoryDigest' => $capture['copyHistoryDigest'], 'renderLayout' => $page->draftLayout()]);
 
             return $section->fresh();
         }, 3);
@@ -184,9 +184,9 @@ final class SavedSectionCommands
             $identity = ActorIdentity::from($actor);
             $section->forceFill($values + ['write_version' => $expectedSectionVersion + 1, 'updated_by' => $identity->id, 'updated_by_type' => $identity->type]);
             $capture = $this->selected($page, $rootId);
-            app(CompositionResolver::class)->lockMutation(null, $capture['document'], new RenderContext(config('app.locale', 'en'), 'preview', $page->id, $page->layout), $actor);
+            app(CompositionResolver::class)->lockMutation(null, $capture['document'], new RenderContext(config('app.locale', 'en'), 'preview', $page->id, $page->draftLayout()), $actor);
             app(SitePartCommands::class)->validateNewPins($actor, null, $capture['document']);
-            $this->append($section, $capture['document'], $identity, ['kind' => 'page', 'id' => (string) $page->id, 'version' => (string) $page->write_version, 'digest' => $this->json->digest($page->draft_content), 'rootIds' => [$rootId], 'copyHistoryDigest' => $capture['copyHistoryDigest'], 'renderLayout' => $page->layout]);
+            $this->append($section, $capture['document'], $identity, ['kind' => 'page', 'id' => (string) $page->id, 'version' => (string) $page->write_version, 'digest' => $this->json->digest($page->draft_content), 'rootIds' => [$rootId], 'copyHistoryDigest' => $capture['copyHistoryDigest'], 'renderLayout' => $page->draftLayout()]);
 
             return $section->fresh();
         }, 3);
@@ -248,7 +248,7 @@ final class SavedSectionCommands
             $extensions->{'site-builder.render'} = $scope['renderFeatures'];
         }
         $selected = new Document([$root], new JsonObject($extensions));
-        app(SourceDocumentValidator::class)->validate($selected, context: new RenderContext(config('app.locale', 'en'), 'preview', $page->id, $page->layout));
+        app(SourceDocumentValidator::class)->validate($selected, context: new RenderContext(config('app.locale', 'en'), 'preview', $page->id, $page->draftLayout()));
 
         return ['document' => $selected, 'copyHistoryDigest' => $scope['copyHistoryDigest']];
     }

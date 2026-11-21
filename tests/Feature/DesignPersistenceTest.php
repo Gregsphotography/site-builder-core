@@ -75,7 +75,7 @@ class DesignPersistenceTest extends DatabaseTestCase
         $this->assertEquals($original->extensions->get('host.document'), $changed->extensions->get('host.document'));
     }
 
-    public function test_design_drafts_publish_and_restore_without_changing_metadata_or_translations(): void
+    public function test_design_and_settings_restore_together_without_changing_the_live_design_or_translations(): void
     {
         $pages = app(PageCommands::class);
         $design = app(DesignCommands::class);
@@ -106,14 +106,15 @@ class DesignPersistenceTest extends DatabaseTestCase
         $this->assertContentPreserved($this->document(), $reset->page->draft_content);
         $this->assertSame($nodeDesign->draftDigest, app(CanonicalJson::class)->digest($reset->page->published_content));
         $meta = $pages->saveMetadata($this->actor, $id, $lease->token, 5, ['title' => 'Updated shared title']);
+        $this->assertSame('Updated shared title', $meta->page->draftView()->title);
         $restored = $pages->restore($this->actor, $id, $lease->token, $meta->page->write_version, $firstRevision->id);
         $this->assertSame($created->draftDigest, $restored->draftDigest);
-        $this->assertSame('Updated shared title', $restored->page->title);
+        $this->assertSame('Shared title', $restored->page->draftView()->title);
         $this->assertSame('design', $restored->page->slugs()->firstOrFail()->slug);
         $this->assertSame($nodeDesign->draftDigest, app(CanonicalJson::class)->digest($restored->page->published_content));
         $restoredDesign = $pages->restore($this->actor, $id, $lease->token, $restored->page->write_version, $designRevision->id);
         $this->assertSame($nodeDesign->draftDigest, $restoredDesign->draftDigest);
-        $this->assertSame('Updated shared title', $restoredDesign->page->title);
+        $this->assertSame('Shared title', $restoredDesign->page->draftView()->title);
         $this->assertNotSame($pageDesign->draftDigest, $restoredDesign->draftDigest);
     }
 
@@ -250,7 +251,7 @@ class DesignPersistenceTest extends DatabaseTestCase
             }
         }
         $metadata = app(PageCommands::class)->saveMetadata($this->actor, $page->id, $lease->token, 0, ['title' => 'Allowed shared metadata']);
-        $this->assertSame('Allowed shared metadata', $metadata->page->title);
+        $this->assertSame('Allowed shared metadata', $metadata->page->draftView()->title);
         $this->assertTrue(app(CanonicalJson::class)->equals($unsupported, $metadata->page->draft_content));
     }
 

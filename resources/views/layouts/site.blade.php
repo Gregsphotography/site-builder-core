@@ -10,6 +10,7 @@
 </head>
 <body>
     @if(($headerSlot ?? null) !== null)<header data-site-builder-canvas>{{ $headerSlot }}</header>@endif
+    @include('site-builder::language-switcher')
     <main data-site-builder-canvas>{{ $slot }}</main>
     @if(($footerSlot ?? null) !== null)<footer data-site-builder-canvas>{{ $footerSlot }}</footer>@endif
     @siteBuilderAssets

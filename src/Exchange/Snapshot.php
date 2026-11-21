@@ -109,6 +109,11 @@ final readonly class Snapshot implements JsonSerializable
         foreach ($this->payload->get('tables') as $kind => $rows) {
             $tables[$kind] = array_map(function (stdClass $row) use ($kind): array {
                 $values = get_object_vars($row);
+                if ($kind === 'pages') {
+                    $values += ['draft_settings' => null];
+                } elseif ($kind === 'revisions') {
+                    $values += ['settings_snapshot' => null];
+                }
                 if ($this->version === 1 && $kind === 'revisions') {
                     $values += ['created_by_type' => null];
                 }

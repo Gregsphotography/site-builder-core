@@ -163,7 +163,7 @@ final class CompositionCommands
 
     private function renderContext(Page $page, SourceSelection $selection): RenderContext
     {
-        return new RenderContext($selection->locale, 'preview', $page->id, $page->layout);
+        return new RenderContext($selection->locale, 'preview', $page->id, $page->draftLayout());
     }
 
     private function assertPosition(Document $document, InsertPosition $position): void

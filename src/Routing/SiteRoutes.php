@@ -7,6 +7,7 @@ namespace SiteBuilder\Core\Routing;
 use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
 use SiteBuilder\Core\Discovery\SearchController;
+use SiteBuilder\Core\Publishing\ClientReviewController;
 
 final class SiteRoutes
 {
@@ -17,6 +18,10 @@ final class SiteRoutes
                 Route::get(self::publicPrefix().'/_site-builder/search/suggest', SearchController::class)->middleware('throttle:60,1')->name('site-builder.search.suggest');
             }
             if (config('site-builder.routes.preview', true)) {
+                $review = self::previewPrefix().'/review/{review}';
+                Route::get($review, [ClientReviewController::class, 'show'])->whereUuid('review')->name('site-builder.review');
+                Route::post($review, [ClientReviewController::class, 'decide'])->whereUuid('review')->middleware('throttle:20,1')->name('site-builder.review.decide');
+                Route::get($review.'/{locale}', [ClientReviewController::class, 'preview'])->whereUuid('review')->name('site-builder.review.preview');
                 Route::get(self::previewPrefix().'/{page}/{locale}', PreviewController::class)->name('site-builder.preview');
             }
             if (config('site-builder.routes.public', true)) {

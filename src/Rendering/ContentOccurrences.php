@@ -17,7 +17,7 @@ final class ContentOccurrences
 {
     public function __construct(private ComponentRegistry $registry, private PropertyResolver $properties) {}
 
-    /** @return list<array{node:Node,address:string,region:string,props:array}> */
+    /** @return list<array{node:Node,address:string,region:string,props:array,mounted:bool,selectableId:?string,sourcePartId:?string}> */
     public function visible(Document $document, RenderContext $context, bool $regions = false): array
     {
         $result = [];
@@ -40,7 +40,7 @@ final class ContentOccurrences
                 if ($presentation !== null && $presentation->diagnostics !== []) {
                     continue;
                 }
-                $result[] = ['node' => $node, 'address' => $composed ? $entry->address : $region.'/'.$node->id, 'region' => $region, 'props' => $this->properties->resolve($node, $definition, $context->locale)];
+                $result[] = ['node' => $node, 'address' => $composed ? $entry->address : $region.'/'.$node->id, 'region' => $region, 'mounted' => $composed && $entry->mounted, 'sourcePartId' => $composed ? $entry->sourcePartId : null, 'selectableId' => $composed ? $entry->selectableId : $node->id, 'props' => $this->properties->resolve($node, $definition, $context->locale)];
                 $children = $composed ? $entry->children : array_values(array_filter($node->children, fn ($child): bool => $definition->allowedChildren()->allows($child->type)));
                 $walk($children, $region, $composed);
             }

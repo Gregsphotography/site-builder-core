@@ -15,6 +15,7 @@ use SiteBuilder\Core\Content\Document;
 use SiteBuilder\Core\Content\DocumentCodec;
 use SiteBuilder\Core\DraftHistory\HistoryRecord;
 use SiteBuilder\Core\Models\Page;
+use SiteBuilder\Core\Publishing\PageReview;
 use SiteBuilder\Core\SavedSections\SavedSectionVersion;
 
 /** Rebuildable index. Destructive decisions additionally inspect current authoritative payloads. */
@@ -37,6 +38,14 @@ final class ContentDependencies
             foreach (['draft' => $page->draft_content, 'published' => $page->published_content] as $scope => $document) {
                 if ($document !== null) {
                     $this->index('page', (string) $page->id, $scope, (string) $page->write_version, $document);
+                }
+            }
+            if (PageReview::available()) {
+                $this->removeOwner('page-review', (string) $page->id);
+                foreach (PageReview::query()->where('page_id', $page->id)->whereIn('status', PageReview::OPEN)->get() as $review) {
+                    if ($review->content !== null) {
+                        $this->index('page-review', (string) $page->id, 'frozen', $review->id.':'.$review->draft_version, $review->content);
+                    }
                 }
             }
             foreach ($page->revisions()->get() as $revision) {
@@ -220,6 +229,11 @@ final class ContentDependencies
         }
         foreach ($connection->table('site_builder_page_revisions')->orderBy('id')->cursor() as $revision) {
             $add('page-revision', $revision->id, 'content', $revision->published_from_version ?? 0, $decode($revision->content));
+        }
+        if ($connection->getSchemaBuilder()->hasTable('site_builder_page_reviews')) {
+            foreach ($connection->table('site_builder_page_reviews')->whereIn('status', PageReview::OPEN)->orderBy('id')->cursor() as $review) {
+                $add('page-review', $review->page_id, 'frozen', $review->id.':'.$review->draft_version, $decode($review->content));
+            }
         }
         if ($connection->getSchemaBuilder()->hasTable('site_builder_site_parts')) {
             foreach ($connection->table('site_builder_site_parts')->orderBy('id')->cursor() as $part) {

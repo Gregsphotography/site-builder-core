@@ -11,8 +11,11 @@ use SiteBuilder\Core\Content\CanonicalJson;
 use SiteBuilder\Core\Content\DocumentCodec;
 use SiteBuilder\Core\Content\DocumentValidator;
 use SiteBuilder\Core\Persistence\ActorIdentity;
+use SiteBuilder\Core\Persistence\PageCommands;
 use SiteBuilder\Core\Rendering\LayoutRegistry;
+use SiteBuilder\Core\Rendering\LocaleCatalog;
 use SiteBuilder\Core\Rendering\RenderContext;
+use SiteBuilder\Core\Routing\RedirectPath;
 use SiteBuilder\Core\SiteParts\NativeGraphImportScope;
 use Throwable;
 
@@ -259,8 +262,9 @@ final class Exchange
                 }
                 if ($kind === 'slugs' || $kind === 'redirects') {
                     $slug = $row[$kind === 'slugs' ? 'slug' : 'from_slug'];
-                    if (! array_key_exists($row['locale'], config('site-builder.locales')) || ! is_string($slug) || $slug === '' || strlen($slug) > 255 || ! preg_match('~^[\pL\pN_-]+(?:/[\pL\pN_-]+)*$~uD', $slug)) {
-                        $issue('invalid_locale_or_path', $path, 'Locales and authored paths must be explicit, configured and valid.');
+                    $validPath = $kind === 'redirects' ? RedirectPath::valid($slug) : (is_string($slug) && strlen($slug) <= 255 && preg_match('~^[\pL\pN_-]+(?:/[\pL\pN_-]+)*$~uD', $slug));
+                    if (! LocaleCatalog::validCode($row['locale']) || ! $validPath) {
+                        $issue('invalid_locale_or_path', $path, 'Stored locale codes and URL paths must be valid.');
                     }
                 }
                 foreach ($definition['unique'] as $constraint) {
@@ -279,13 +283,25 @@ final class Exchange
                     }
                 }
                 if ($kind === 'pages') {
-                    if (! in_array($row['status'], ['draft', 'published'], true) || ! is_string($row['title']) || $row['title'] === '') {
+                    if (! in_array($row['status'], ['draft', 'published', 'trashed'], true) || ! is_string($row['title']) || $row['title'] === '') {
                         $issue('invalid_page_metadata', $path, 'Page status/title must be preserved as valid values.');
                     }
                     try {
                         $this->layouts->view($row['layout']);
                     } catch (Throwable) {
                         $issue('unsupported_layout', $path.'/layout', 'Register this layout before cutover.');
+                    }
+                }
+                $pageId = (int) ($row['page_id'] ?? $id);
+                $storedSettings = $kind === 'pages' ? 'draft_settings' : 'settings_snapshot';
+                $settings = null;
+                if (in_array($kind, ['pages', 'revisions'], true) && isset($row[$storedSettings])) {
+                    try {
+                        $decoded = json_decode($row[$storedSettings], flags: JSON_THROW_ON_ERROR);
+                        app(PageCommands::class)->validateSettingsSnapshot($decoded);
+                        $settings = $decoded;
+                    } catch (Throwable) {
+                        $issue('invalid_settings_snapshot', $path.'/'.$storedSettings, 'The settings snapshot must contain valid page settings and localized URLs.');
                     }
                 }
                 foreach ($kind === 'pages' ? ['draft_content', 'published_content'] : ($kind === 'revisions' ? ['content'] : []) as $column) {
@@ -299,9 +315,15 @@ final class Exchange
                                 $issue('dangling_page_reference', $path.'/'.$column.'/'.$reference->nodeId.$reference->path, 'A declared component page reference is outside the preserved identity map.');
                             }
                         }
-                        $diagnostics = $this->documents->diagnostics($document, true, $pageLocales[(string) ($row['page_id'] ?? $id)] ?? [], new RenderContext(array_key_first(config('site-builder.locales')), 'public', $kind === 'pages' ? (int) $id : (int) $row['page_id'], $kind === 'pages' ? $row['layout'] : ($pageLayouts[(string) $row['page_id']] ?? null)));
+                        $useSettings = $column !== 'published_content' && $settings !== null;
+                        $locales = $useSettings ? array_keys((array) $settings->slugs) : ($pageLocales[$pageId] ?? []);
+                        $locales = array_intersect(array_keys(config('site-builder.locales')), $locales);
+                        $layout = $useSettings ? $settings->layout : ($pageLayouts[$pageId] ?? null);
+                        $diagnostics = $this->documents->diagnostics($document, true, $locales, new RenderContext(array_key_first(config('site-builder.locales')), 'public', $pageId, $layout));
                         foreach ($diagnostics as $diagnostic) {
-                            $issue($diagnostic->code, $path.'/'.$column.$diagnostic->path, $diagnostic->message);
+                            if ($diagnostic->code !== 'unconfigured_locale') {
+                                $issue($diagnostic->code, $path.'/'.$column.$diagnostic->path, $diagnostic->message);
+                            }
                         }
                         $checkLegacy = function (array $nodes) use (&$checkLegacy, $issue, $path, $column): void {
                             foreach ($nodes as $node) {

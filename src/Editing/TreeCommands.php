@@ -81,7 +81,7 @@ final class TreeCommands
             if ($history !== null) {
                 app(DraftHistory::class)->inspectCurrent($history, $actor, $page, $token);
             }
-            [$document, $selectedIds] = $operation($page->draft_content ?? new Document, new RenderContext($this->locales->default(), 'preview', $page->id, $page->layout));
+            [$document, $selectedIds] = $operation($page->draft_content ?? new Document, new RenderContext($this->locales->default(), 'preview', $page->id, $page->draftLayout()));
             $mutation = $this->pages->saveDraft($actor, $pageId, $token, $version, $document, $history, new LogicalAction('tree', $label));
 
             return new TreeMutationResult($mutation, $selectedIds);

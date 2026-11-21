@@ -16,6 +16,11 @@ final class PreviewLinks
 {
     public function __construct(private PageAccess $access, private LocaleCatalog $locales) {}
 
+    public static function epoch(): string
+    {
+        return (string) config('site-builder.preview.epoch', '1');
+    }
+
     public function create(Authenticatable $actor, int $pageId, string $locale, ?string $session = null, ?string $channel = null): string
     {
         $page = Page::query()->findOrFail($pageId);
@@ -28,7 +33,7 @@ final class PreviewLinks
             throw new InvalidArgumentException('Editor previews require a UUID session and channel.');
         }
 
-        $epoch = (string) config('site-builder.preview.epoch', '1');
+        $epoch = self::epoch();
         if ($epoch === '') {
             throw new InvalidArgumentException('Configure a nonempty preview epoch.');
         }

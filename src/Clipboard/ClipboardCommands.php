@@ -128,7 +128,7 @@ final class ClipboardCommands
                 (clone $query)->where('id', $oldest->id)->delete();
                 $bytes -= (int) $oldest->storage_bytes;
             }
-            DB::table('site_builder_clipboard_snapshots')->insert(['id' => $id, 'owner_id' => $owner, 'source_page_id' => $page->id, 'source_version' => $page->write_version, 'owner_sequence' => $sequence, 'source_domain' => $this->domain($actor, $page), 'source_layout' => $page->layout, 'source_tab_id' => $tabId, 'document' => $encoded, 'envelope' => $text, 'digest' => $digest, 'envelope_digest' => hash('sha256', $text), 'copy_history_digest' => $scope['copyHistoryDigest'], 'storage_bytes' => $charged, 'expires_at' => $expires, 'created_at' => now()]);
+            DB::table('site_builder_clipboard_snapshots')->insert(['id' => $id, 'owner_id' => $owner, 'source_page_id' => $page->id, 'source_version' => $page->write_version, 'owner_sequence' => $sequence, 'source_domain' => $this->domain($actor, $page), 'source_layout' => $page->draftLayout(), 'source_tab_id' => $tabId, 'document' => $encoded, 'envelope' => $text, 'digest' => $digest, 'envelope_digest' => hash('sha256', $text), 'copy_history_digest' => $scope['copyHistoryDigest'], 'storage_bytes' => $charged, 'expires_at' => $expires, 'created_at' => now()]);
 
             return $this->envelope($payload, $document, $text);
         }, 3);
@@ -423,7 +423,7 @@ final class ClipboardCommands
 
     private function context(Page $page, string $locale): RenderContext
     {
-        return new RenderContext($locale, 'preview', $page->id, $page->layout);
+        return new RenderContext($locale, 'preview', $page->id, $page->draftLayout());
     }
 
     private function locale(string $locale): void

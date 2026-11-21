@@ -18,9 +18,15 @@ php artisan site-builder:discovery-doctor --no-interaction
 
 The index is optional, derived data. Installing it does not create content or enable extra public routes. Set `site-builder.discovery.enabled` to `true` to enable the bounded, throttled suggestions endpoint under the configured public route prefix. Existing explicit host routes retain priority. Create and publish a page containing Search results, then select that page in each Search box. An optional `site-builder.discovery.results_page` supplies the default page ID. Suggestions inherit the selected results component's source/type/topic restrictions; ordinary GET submission works without JavaScript.
 
-Page settings include translated discovery summaries, thumbnails, topics, editorial dates and listing/search inclusion switches. These fields remain private until the document is published and participate in content history. Existing title, type, URL and SEO metadata retain their existing immediate behavior. Noindex pages, drafts and pages without a URL in the current locale are excluded. Thumbnail references participate in whole-document copy and native exchange mapping; section captures omit page discovery metadata.
+Page settings include translated discovery summaries, thumbnails, topics, editorial dates and listing/search inclusion switches. These fields remain private until the document is published and participate in content history. The title, type, localized URLs and SEO settings are staged with the draft. Publication applies them together and records them in the new revision. Noindex pages, drafts and pages without a URL in the current locale are excluded. Thumbnail references participate in whole-document copy and native exchange mapping; section captures omit page discovery metadata.
 
 Use the existing optional site-parts installer and migrations before creating overlays. Existing host policies need explicit abilities for the new `overlay` kind. The demo grants these only to its existing builder administrators.
+
+## Editorial tools
+
+**SEO & translations** reviews builder pages in every configured language. Filter by finding, then open a title, description, social image or translated content field. Published rows describe the live page. In **Page settings**, saving updates the search and social previews for the draft. Publish to apply content, URLs and settings together. Restoring a revision prepares a draft for review. Revisions created before the settings migration hold content only.
+
+**Page settings → Move page to Trash** shows incoming builder links before removal. **Pages → Trash** restores the page to draft along with its reserved URLs and revision history. Publish to make the page available again.
 
 ## Content adapters
 

@@ -45,7 +45,7 @@ final class DraftHistory
                 throw ValidationException::withMessages(['history' => 'The editor tab identity must be a UUID.']);
             }
             $identity = ActorIdentity::from($actor);
-            app(CompositionResolver::class)->lockMutation($page->draft_content, null, new RenderContext(config('app.locale', 'en'), 'preview', $page->id, $page->layout), $actor);
+            app(CompositionResolver::class)->lockMutation($page->draft_content, null, new RenderContext(config('app.locale', 'en'), 'preview', $page->id, $page->draftLayout()), $actor);
             $row = HistoryRecord::query()->where('owner_kind', 'page')->where('owner_id', (string) $pageId)->where('tab_id', $tabId)->lockForUpdate()->first();
             $same = $row !== null && $this->matches($row, $identity, $leaseToken) && $row->expires_at->isFuture();
             if ($same && ! $reset) {
@@ -246,7 +246,7 @@ final class DraftHistory
             }
             $previewValue = $preview->checkpoints[$previewCursor]['document'];
             $prospective = $previewValue === null ? null : $this->codec->decode($previewValue);
-            app(CompositionResolver::class)->lockMutation($page->draft_content, $prospective, new RenderContext(config('app.locale', 'en'), 'preview', $page->id, $page->layout), $actor);
+            app(CompositionResolver::class)->lockMutation($page->draft_content, $prospective, new RenderContext(config('app.locale', 'en'), 'preview', $page->id, $page->draftLayout()), $actor);
             $row = $this->row($actor, $page, $token, $context);
             $this->assertPage($row, $page);
             $cursor = $row->cursor + $direction;
@@ -259,7 +259,7 @@ final class DraftHistory
             if (! hash_equals($checkpoint['digest'], $this->json->digest($target))) {
                 throw new WriteConflict('history_changed', $page->write_version);
             }
-            $diagnostics = $target === null ? [] : $this->validator->validate($target, context: new RenderContext(config('app.locale', 'en'), 'preview', $page->id, $page->layout));
+            $diagnostics = $target === null ? [] : $this->validator->validate($target, context: new RenderContext(config('app.locale', 'en'), 'preview', $page->id, $page->draftLayout()));
             if (! $this->json->equals($page->draft_content, $target)) {
                 $page->forceFill(['draft_content' => $target, 'write_version' => $version + 1])->save();
             }

@@ -162,6 +162,51 @@ class SchemaTest extends TestCase
         $this->assertSame(0, Page::count());
     }
 
+    public function test_settings_migration_resumes_partial_ddl_and_retains_existing_values(): void
+    {
+        $migration = require __DIR__.'/../../database/migrations/0001_01_01_000210_stage_page_settings.php';
+        $page = Page::factory()->create(['draft_settings' => (object) ['title' => 'Retained']]);
+        Schema::table('site_builder_page_revisions', fn ($table) => $table->dropColumn('settings_snapshot'));
+        $migration->up();
+        $migration->up();
+        $this->assertSame('Retained', $page->fresh()->draft_settings->title);
+        $this->assertTrue(Schema::hasColumn('site_builder_page_revisions', 'settings_snapshot'));
+        $page->forceFill(['draft_settings' => null])->save();
+        Schema::table('site_builder_page_revisions', fn ($table) => $table->dropColumn('settings_snapshot'));
+        $migration->down();
+        $this->assertFalse(Schema::hasColumn('site_builder_pages', 'draft_settings'));
+        $migration->up();
+    }
+
+    #[DataProvider('retainedPageSettings')]
+    public function test_settings_downgrade_refuses_retained_work_before_dropping_either_column(string $kind): void
+    {
+        $migration = require __DIR__.'/../../database/migrations/0001_01_01_000210_stage_page_settings.php';
+        $page = Page::factory()->create();
+        $revision = PageRevision::factory()->create(['page_id' => $page->id]);
+        match ($kind) {
+            'draft' => $page->forceFill(['draft_settings' => (object) ['title' => 'Retained']])->save(),
+            'revision' => $revision->forceFill(['settings_snapshot' => (object) ['title' => 'Retained']])->save(),
+            'trash' => $page->forceFill(['status' => 'trashed'])->save(),
+        };
+        try {
+            $migration->down();
+            $this->fail('A downgrade discarded editorial state.');
+        } catch (\RuntimeException $exception) {
+            $this->assertStringContainsString('before downgrading', $exception->getMessage());
+            $this->assertTrue(Schema::hasColumn('site_builder_pages', 'draft_settings'));
+            $this->assertTrue(Schema::hasColumn('site_builder_page_revisions', 'settings_snapshot'));
+        } finally {
+            // SchemaTest also exercises a clean package rollback in tearDown.
+            $page->delete();
+        }
+    }
+
+    public static function retainedPageSettings(): array
+    {
+        return [['draft'], ['revision'], ['trash']];
+    }
+
     private function migrationOptions(): array
     {
         return ['--path' => realpath(__DIR__.'/../../database/migrations'), '--realpath' => true, '--force' => true];

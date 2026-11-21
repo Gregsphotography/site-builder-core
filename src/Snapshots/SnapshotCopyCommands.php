@@ -234,7 +234,7 @@ final class SnapshotCopyCommands
                 $owner = Page::query()->lockForUpdate()->findOrFail($destination->id);
                 $identity = app(PageAccess::class)->authorize($actor, 'update', $owner);
                 app(PageLocks::class)->assertHeld($owner, $identity, $lease);
-                $context = new RenderContext($locale, 'preview', $owner->id, $owner->layout);
+                $context = new RenderContext($locale, 'preview', $owner->id, $owner->draftLayout());
                 $document = $owner->draft_content ?? new Document;
                 if ($owner->write_version !== $version) {
                     throw new WriteConflict('stale_version', $owner->write_version);

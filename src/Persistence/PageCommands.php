@@ -27,13 +27,17 @@ use SiteBuilder\Core\Models\Page;
 use SiteBuilder\Core\Models\PageRedirect;
 use SiteBuilder\Core\Models\PageRevision;
 use SiteBuilder\Core\Models\PageSlug;
+use SiteBuilder\Core\Publishing\PageReview;
 use SiteBuilder\Core\Rendering\LayoutRegistry;
 use SiteBuilder\Core\Rendering\LocaleCatalog;
 use SiteBuilder\Core\Rendering\RenderContext;
 use SiteBuilder\Core\Rendering\RenderFeatureRegistry;
 use SiteBuilder\Core\Rendering\SafeUrl;
+use SiteBuilder\Core\Routing\ManagedRedirects;
+use SiteBuilder\Core\Routing\MissingPaths;
 use SiteBuilder\Core\SiteParts\ContentDependencies;
 use SiteBuilder\Core\SiteParts\SitePartCommands;
+use stdClass;
 
 final class PageCommands
 {
@@ -65,7 +69,7 @@ final class PageCommands
     {
         return $this->mutate($actor, $pageId, $token, $expectedVersion, 'update', function (Page $page) use ($document): void {
             $this->preserveUnsupported($page->draft_content, $document);
-            $context = new RenderContext($this->locales->default(), 'preview', $page->id, $page->layout);
+            $context = new RenderContext($this->locales->default(), 'preview', $page->id, $page->draftLayout());
             app(DesignResolver::class)->assertUnavailablePreserved($page->draft_content, $document, $context);
             $this->validator->validate($document, context: $context);
             if (! $this->json->equals($page->draft_content, $document)) {
@@ -78,32 +82,25 @@ final class PageCommands
     {
         return $this->mutate($actor, $pageId, $token, $expectedVersion, 'update', function (Page $page) use ($metadata, $slugs): void {
             $this->metadata($metadata);
-            if (array_key_exists('layout', $metadata) && $metadata['layout'] !== $page->layout) {
-                $context = new RenderContext($this->locales->default(), 'preview', $page->id, $metadata['layout']);
-                foreach ([$page->draft_content, $page->published_content] as $document) {
-                    if ($document === null) {
-                        continue;
-                    }
-                    if (CompositionData::payload($document) !== null && app(CompositionResolver::class)->diagnostics($document, $context) !== []) {
-                        throw ValidationException::withMessages(['layout' => 'The new wrapper cannot render the pinned composition regions or site design.']);
-                    }
-                    if (app(RenderFeatureRegistry::class)->readOnly($document)) {
-                        throw ValidationException::withMessages(['layout' => 'Unavailable document rendering requirements prevent an unreviewed wrapper change.']);
-                    }
-                    if (DesignData::payload($document->extensions) !== null && app(DesignOperations::class)->compatibility($document, $context) !== []) {
-                        throw ValidationException::withMessages(['layout' => 'The new wrapper cannot render the pinned document design. Choose a compatible registered adapter.']);
-                    }
+            $published = $page->publishedSettings();
+            $draft = $page->draft_settings ?? $published;
+            if (array_key_exists('layout', $metadata) && $metadata['layout'] !== $draft->layout && $page->draft_content !== null) {
+                $this->validateDraftLayout($page, $metadata['layout']);
+            }
+            $urls = (array) $draft->slugs;
+            foreach ($slugs ?? [] as $locale => $slug) {
+                if (isset($urls[$locale]) && $urls[$locale] === $slug) {
+                    continue;
+                }
+                $this->validateSlug($page, $locale, $slug);
+                if ($slug === null) {
+                    unset($urls[$locale]);
+                } else {
+                    $urls[$locale] = $slug;
                 }
             }
-            $page->fill($metadata);
-            if ($slugs !== null) {
-                $beforeSlugs = $page->slugs()->pluck('slug', 'locale')->all();
-                $this->slugs($page, $slugs);
-                // Slugs are separate rows; only an actual URL change advances the page.
-                if (! $this->json->equals($beforeSlugs, $page->slugs()->pluck('slug', 'locale')->all())) {
-                    $page->write_version++;
-                }
-            }
+            $candidate = (object) [...(array) $draft, ...$metadata, 'slugs' => (object) $urls];
+            $page->draft_settings = $this->json->equals($published, $candidate) ? null : $candidate;
         }, $history, $action ?? new LogicalAction('metadata', 'Update page settings'));
     }
 
@@ -114,26 +111,68 @@ final class PageCommands
                 throw new WriteConflict('draft_digest_changed', $page->write_version);
             }
             Validator::make(['label' => $label], ['label' => ['nullable', 'string', 'max:255']])->validate();
-            $locales = $page->slugs()->pluck('locale')->all();
-            $this->validator->validate($page->draft_content ?? new Document, true, $locales, new RenderContext($this->locales->default(), 'public', $page->id, $page->layout));
-            $this->layouts->view($page->layout);
-            $page->forceFill(['published_content' => $page->draft_content, 'status' => 'published', 'published_at' => now(), 'published_from_version' => $page->write_version]);
-            $revision = new PageRevision;
-            $identity = ActorIdentity::from($actor);
-            $revision->forceFill(['page_id' => $page->id, 'scope' => 'content', 'content' => $page->draft_content, 'created_by' => $identity->id, 'created_by_type' => $identity->type, 'label' => $label, 'created_at' => now(), 'published_from_version' => $page->write_version, 'origin' => 'native'])->save();
-            $keep = (int) config('site-builder.revisions.keep', 20);
-            if ($keep > 0) {
-                // Historical imports survive retention; only native publication history is pruned.
-                $ids = $page->revisions()->where('origin', 'native')->skip($keep)->take(PHP_INT_MAX)->pluck('id');
-                $page->revisions()->whereIn('id', $ids)->delete();
-            }
-            $page->write_version++;
+            $this->publishVersion($page, $actor, $page->draft_content, $page->draft_settings ?? $page->publishedSettings(), $page->write_version, $label);
         }, boundary: true);
+    }
+
+    /** Publish only an approved snapshot. Newer saved work stays in the draft. */
+    public function publishReview(Authenticatable $actor, int $pageId, string $reviewId): MutationResult
+    {
+        return DB::transaction(function () use ($actor, $pageId, $reviewId): MutationResult {
+            $page = Page::query()->lockForUpdate()->findOrFail($pageId);
+            $this->access->authorize($actor, 'publish', $page);
+            $review = PageReview::query()->where('page_id', $pageId)->lockForUpdate()->findOrFail($reviewId);
+            if (! in_array($review->status, ['approved', 'scheduled'], true)) {
+                throw ValidationException::withMessages(['review' => 'This version requires a current client approval.']);
+            }
+            $context = new RenderContext($this->locales->default(), 'preview', $page->id, $review->settings->layout);
+            app(CompositionResolver::class)->lockMutation($page->published_content, $review->content, $context, $actor);
+            if ($review->content !== null) {
+                app(SitePartCommands::class)->validateNewPins($actor, $page->published_content, $review->content);
+                app(AuthoringConstraints::class)->check($actor, $review->content, $context);
+            }
+            $review->forceFill(['status' => 'published'])->save();
+            $this->publishVersion($page, $actor, $review->content, $review->settings, $review->draft_version, 'Approved draft '.$review->draft_version);
+            $page->save();
+            app(DraftHistory::class)->invalidatePage($pageId);
+            app(ContentDependencies::class)->syncPage($page);
+
+            return $this->result($page->fresh());
+        }, 3);
+    }
+
+    private function publishVersion(Page $page, Authenticatable $actor, ?Document $content, stdClass $settings, int $fromVersion, ?string $label): void
+    {
+        $this->validateSettingsSnapshot($settings);
+        $slugs = (array) $settings->slugs;
+        $context = new RenderContext($this->locales->default(), 'public', $page->id, $settings->layout);
+        $this->validator->validate($content ?? new Document, true, array_intersect($this->locales->all(), array_keys($slugs)), $context);
+        $live = $page->publishedSettings();
+        $draft = $page->draft_settings ?? $live;
+        if (! $this->json->equals($live, $settings)) {
+            $previous = (array) $live->slugs;
+            $changes = array_diff_assoc($slugs, $previous) + array_fill_keys(array_keys(array_diff_key($previous, $slugs)), null);
+            $this->slugs($page, $changes, allowInactive: true);
+            $page->unsetRelation('slugs');
+            $page->fill(array_diff_key((array) $settings, ['slugs' => true]));
+        }
+        $page->draft_settings = $this->json->equals($draft, $settings) ? null : $draft;
+        $page->forceFill(['published_content' => $content, 'status' => 'published', 'published_at' => now(), 'published_from_version' => $fromVersion]);
+        $identity = ActorIdentity::from($actor);
+        (new PageRevision)->forceFill(['page_id' => $page->id, 'scope' => 'content', 'content' => $content, 'settings_snapshot' => $settings, 'created_by' => $identity->id, 'created_by_type' => $identity->type, 'label' => $label, 'created_at' => now(), 'published_from_version' => $fromVersion, 'origin' => 'native'])->save();
+        $keep = (int) config('site-builder.revisions.keep', 20);
+        if ($keep > 0) {
+            $ids = $page->revisions()->where('origin', 'native')->skip($keep)->take(PHP_INT_MAX)->pluck('id');
+            $page->revisions()->whereIn('id', $ids)->delete();
+        }
+        PageReview::cancelOpen($page->id, $fromVersion);
+        $page->write_version++;
     }
 
     public function unpublish(Authenticatable $actor, int $pageId, string $token, int $expectedVersion): MutationResult
     {
         return $this->mutate($actor, $pageId, $token, $expectedVersion, 'publish', function (Page $page): void {
+            PageReview::cancelOpen($page->id);
             $page->forceFill(['status' => 'draft', 'published_at' => null]);
             $page->write_version++;
         }, boundary: true);
@@ -141,12 +180,24 @@ final class PageCommands
 
     public function restore(Authenticatable $actor, int $pageId, string $token, int $expectedVersion, int $revisionId): MutationResult
     {
-        return $this->mutate($actor, $pageId, $token, $expectedVersion, 'restore', function (Page $page) use ($revisionId): void {
+        // Read the revision after authorization and the page lock. Its settings also
+        // determine the wrapper for composition guards before restoring the content.
+        $candidate = function (Page $page) use ($revisionId): ?Document {
             $revision = $page->revisions()->where('scope', 'content')->findOrFail($revisionId);
-            $this->validator->validate($revision->content ?? new Document, context: new RenderContext($this->locales->default(), 'preview', $page->id, $page->layout));
-            $page->draft_content = $revision->content;
+            if ($revision->settings_snapshot !== null) {
+                $settings = $revision->settings_snapshot;
+                $this->validateSettingsSnapshot($settings);
+                $page->draft_settings = $this->json->equals($settings, $page->publishedSettings()) ? null : $settings;
+            }
+
+            return $revision->content;
+        };
+
+        return $this->mutate($actor, $pageId, $token, $expectedVersion, 'restore', function (Page $page, ?Document $content): void {
+            $this->validator->validate($content ?? new Document, context: new RenderContext($this->locales->default(), 'preview', $page->id, $page->draftLayout()));
+            $page->draft_content = $content;
             $page->write_version++;
-        }, boundary: true, candidate: fn (Page $page) => $page->revisions()->where('scope', 'content')->findOrFail($revisionId)->content);
+        }, boundary: true, candidate: $candidate);
     }
 
     public function delete(Authenticatable $actor, int $pageId, string $token, int $expectedVersion): void
@@ -155,7 +206,9 @@ final class PageCommands
             foreach (app()->tagged(PageDeletionGuard::class) as $guard) {
                 $guard->check($page, $actor);
             }
-            $page->delete();
+            PageReview::cancelOpen($page->id);
+            $page->forceFill(['status' => 'trashed', 'published_at' => null]);
+            $page->editLock()->delete();
         }, boundary: true);
     }
 
@@ -168,8 +221,8 @@ final class PageCommands
             if ($page->write_version !== $expectedVersion) {
                 throw new WriteConflict('stale_version', $page->write_version);
             }
-            $context = new RenderContext($this->locales->default(), 'preview', $page->id, $page->layout);
             $target = $candidate instanceof \Closure ? $candidate($page) : $candidate;
+            $context = new RenderContext($this->locales->default(), 'preview', $page->id, $page->draftLayout());
             if ($target === null && $ability === 'publish') {
                 $target = $page->draft_content;
             }
@@ -182,7 +235,7 @@ final class PageCommands
                 app(DraftHistory::class)->assertCurrent($history, $actor, $page, $token);
             }
             $before = $page->draft_content;
-            $command($page);
+            $command($page, $target);
             if ($page->exists && $page->isDirty()) {
                 $page->write_version = $expectedVersion + 1;
                 $page->save();
@@ -201,13 +254,29 @@ final class PageCommands
 
     private function result(Page $page): MutationResult
     {
-        return new MutationResult($page, $this->json->digest($page->draft_content), $page->draft_content === null ? [] : $this->validator->diagnostics($page->draft_content, context: new RenderContext($this->locales->default(), 'preview', $page->id, $page->layout)));
+        return new MutationResult($page, $this->json->digest($page->draft_content), $page->draft_content === null ? [] : $this->validator->diagnostics($page->draft_content, context: new RenderContext($this->locales->default(), 'preview', $page->id, $page->draftLayout())));
+    }
+
+    /** Check a complete versioned settings payload without reserving public URLs. */
+    public function validateSettingsSnapshot(mixed $settings): void
+    {
+        $keys = [...Page::SETTINGS_FIELDS, 'slugs'];
+        if (! $settings instanceof stdClass || array_diff($keys, array_keys((array) $settings)) !== [] || ! $settings->slugs instanceof stdClass) {
+            throw ValidationException::withMessages(['settings' => 'A settings snapshot must contain all page settings and a locale-keyed URL map.']);
+        }
+        $this->metadata(array_diff_key((array) $settings, ['slugs' => true]));
+        foreach ($settings->slugs as $locale => $slug) {
+            if ($slug === null) {
+                throw ValidationException::withMessages(['slugs' => 'Omit locales without a URL from the snapshot.']);
+            }
+            $this->validateSlugSyntax($locale, $slug, allowInactive: true);
+        }
     }
 
     private function metadata(array $data): void
     {
-        if (array_diff(array_keys($data), ['title', 'type', 'layout', 'seo', 'schema', 'data']) !== []) {
-            throw ValidationException::withMessages(['metadata' => 'Only shared page metadata may be changed here.']);
+        if (array_diff(array_keys($data), Page::SETTINGS_FIELDS) !== []) {
+            throw ValidationException::withMessages(['metadata' => 'Only editable page settings may be changed here.']);
         }
         Validator::make($data, ['title' => ['sometimes', 'required', 'string', 'max:255'], 'type' => ['sometimes', 'required', 'string', 'max:255'], 'layout' => ['nullable', 'string', 'max:255']])->validate();
         if (array_key_exists('layout', $data)) {
@@ -220,11 +289,11 @@ final class PageCommands
         }
         if (isset($data['seo'])) {
             $seo = json_decode(json_encode($data['seo'], JSON_THROW_ON_ERROR));
-            if (! $seo instanceof \stdClass && $seo !== []) {
+            if (! $seo instanceof stdClass && $seo !== []) {
                 throw ValidationException::withMessages(['seo' => 'SEO must be a locale-keyed object.']);
             }
             foreach ($seo as $values) {
-                if (! $values instanceof \stdClass) {
+                if (! $values instanceof stdClass) {
                     throw ValidationException::withMessages(['seo' => 'Each SEO locale must contain a property object.']);
                 }
                 foreach (['meta_title', 'meta_description', 'canonical', 'og_image'] as $key) {
@@ -249,15 +318,46 @@ final class PageCommands
         }
     }
 
-    private function slugs(Page $page, array $slugs): void
+    private function validateDraftLayout(Page $page, ?string $layout): void
     {
+        $document = $page->draft_content;
+        $context = new RenderContext($this->locales->default(), 'preview', $page->id, $layout);
+        if (CompositionData::payload($document) !== null && app(CompositionResolver::class)->diagnostics($document, $context) !== []) {
+            throw ValidationException::withMessages(['layout' => 'The new wrapper cannot render the pinned composition regions or site design.']);
+        }
+        if (app(RenderFeatureRegistry::class)->readOnly($document)) {
+            throw ValidationException::withMessages(['layout' => 'Unavailable document rendering requirements prevent an unreviewed wrapper change.']);
+        }
+        if (DesignData::payload($document->extensions) !== null && app(DesignOperations::class)->compatibility($document, $context) !== []) {
+            throw ValidationException::withMessages(['layout' => 'The new wrapper cannot render the pinned document design. Choose a compatible registered adapter.']);
+        }
+    }
+
+    private function validateSlugSyntax(mixed $locale, mixed $slug, bool $allowInactive): void
+    {
+        if (! LocaleCatalog::validCode($locale) || (! $allowInactive && ! $this->locales->has($locale))) {
+            throw ValidationException::withMessages(['slugs' => 'Choose a configured language to edit its URL.']);
+        }
+        if ($slug !== null && (! is_string($slug) || strlen($slug) > 255 || ! preg_match('~^[\pL\pN_-]+(?:/[\pL\pN_-]+)*$~uD', $slug) || ($this->locales->has($locale) && in_array(explode('/', $slug)[0], $this->locales->all(), true)))) {
+            throw ValidationException::withMessages(['slugs' => 'Use a safe, nonreserved slash-separated URL path, or null to remove it.']);
+        }
+    }
+
+    private function validateSlug(Page $page, mixed $locale, mixed $slug, bool $allowInactive = false): void
+    {
+        $this->validateSlugSyntax($locale, $slug, $allowInactive);
+        if ($slug !== null && PageSlug::query()->where('locale', $locale)->where('slug', $slug)->where('page_id', '!=', $page->id)->exists()) {
+            throw ValidationException::withMessages(['slugs' => 'This URL path is already used by another page in this language.']);
+        }
+    }
+
+    private function slugs(Page $page, array $slugs, bool $allowInactive = false): void
+    {
+        if ($slugs !== []) {
+            ManagedRedirects::lockRoutes();
+        }
         foreach ($slugs as $locale => $slug) {
-            if (! is_string($locale) || ! $this->locales->has($locale) || ($slug !== null && (! is_string($slug) || strlen($slug) > 255 || ! preg_match('~^[\pL\pN_-]+(?:/[\pL\pN_-]+)*$~uD', $slug) || in_array(explode('/', $slug)[0], $this->locales->all(), true)))) {
-                throw ValidationException::withMessages(['slugs' => 'Use configured locales and safe nonreserved slash-separated slugs, or null to remove a locale.']);
-            }
-            if ($slug !== null && PageSlug::query()->where('locale', $locale)->where('slug', $slug)->where('page_id', '!=', $page->id)->exists()) {
-                throw ValidationException::withMessages(['slugs' => 'This URL path is already used by another page in this language.']);
-            }
+            $this->validateSlug($page, $locale, $slug, $allowInactive);
             $old = $page->slugs()->where('locale', $locale)->first();
             if ($old !== null && $old->slug !== $slug) {
                 PageRedirect::query()->updateOrCreate(['locale' => $locale, 'from_slug' => $old->slug], ['page_id' => $page->id, 'status' => 301]);
@@ -276,6 +376,7 @@ final class PageCommands
                     throw ValidationException::withMessages(['slugs' => 'This URL path is already used by another page in this language.']);
                 }
                 PageRedirect::query()->where('locale', $locale)->where('from_slug', $slug)->delete();
+                app(MissingPaths::class)->forget($locale, $slug);
             }
         }
     }

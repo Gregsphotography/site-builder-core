@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SiteBuilder\Core\Components;
 
+use Dom\HTMLDocument;
 use SiteBuilder\Core\Content\Document;
 use SiteBuilder\Core\Discovery\DiscoveryMetadata;
 use stdClass;
@@ -13,16 +14,25 @@ final class ReferenceScanner
     public function __construct(private ComponentRegistry $registry) {}
 
     /** @return list<Reference> */
-    public function scan(Document $document): array
+    public function scan(Document $document, bool $includeLinks = false): array
     {
         $references = [];
         $escape = fn (string $key): string => str_replace(['~', '/'], ['~0', '~1'], $key);
-        $scanProperty = function (mixed $value, PropertyDefinition $definition, string $nodeId, ?string $locale, string $path) use (&$scanProperty, &$references, $escape): void {
+        $scanProperty = function (mixed $value, PropertyDefinition $definition, string $nodeId, ?string $locale, string $path) use (&$scanProperty, &$references, $escape, $includeLinks): void {
             if ($value === null) {
                 return;
             }
             if (in_array($definition->kind, ['page', 'media', 'revision'], true)) {
                 $references[] = new Reference($nodeId, $locale, $path, $definition->kind, $value, $definition->revisionKind);
+            } elseif ($includeLinks && $definition->kind === 'url' && is_string($value)) {
+                $references[] = new Reference($nodeId, $locale, $path, 'url', $value);
+            } elseif ($includeLinks && $definition->kind === 'html' && is_string($value) && stripos($value, '<a') !== false) {
+                $html = HTMLDocument::createFromString($value, LIBXML_NOERROR, 'UTF-8');
+                foreach ($html->getElementsByTagName('a') as $index => $anchor) {
+                    if ($anchor->hasAttribute('href')) {
+                        $references[] = new Reference($nodeId, $locale, $path.'/links/'.$index, 'url', $anchor->getAttribute('href'));
+                    }
+                }
             } elseif ($definition->kind === 'list' && is_array($value)) {
                 foreach ($value as $index => $item) {
                     $scanProperty($item, $definition->items, $nodeId, $locale, $path.'/'.$index);

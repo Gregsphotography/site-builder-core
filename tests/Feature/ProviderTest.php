@@ -51,7 +51,9 @@ class ProviderTest extends TestCase
             $this->artisan('site-builder:install')->assertSuccessful();
             $this->assertSame('<?php return ["host" => true];', file_get_contents(config_path('site-builder.php')));
             $this->assertSame('<?php return ["host_migration" => true];', file_get_contents($migration));
-            $this->assertCount(2, File::files(database_path('migrations')));
+            $this->assertCount(count(glob(__DIR__.'/../../database/migrations/*.php')), File::files(database_path('migrations')));
+            $this->assertCount(1, glob(database_path('migrations/*_create_site_builder_route_reporting.php')));
+            $this->assertCount(1, glob(database_path('migrations/*_stage_page_settings.php')));
             foreach (['preview.js', 'site-builder.css'] as $asset) {
                 $this->assertSame(file_get_contents(__DIR__.'/../../resources/dist/'.$asset), file_get_contents(public_path('vendor/site-builder/'.$asset)));
             }

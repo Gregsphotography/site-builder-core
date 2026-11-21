@@ -105,14 +105,26 @@ class MySqlConcurrencyTest extends DatabaseTestCase
         $this->assertSame(1, DB::table('site_builder_page_slugs')->where('slug', 'contested-path')->count());
     }
 
-    public function test_simultaneous_renames_keep_rejected_metadata_and_redirects_atomic(): void
+    public function test_simultaneous_publication_of_staged_renames_keeps_rejected_metadata_and_redirects_atomic(): void
     {
         $page = Page::factory()->create();
         $results = $this->race($page, 'slug-rename');
         $this->assertSame(1, $results['accepted'] ?? 0);
         $this->assertSame(2, $results['url_taken'] ?? 0);
-        $this->assertSame(1, Page::query()->where('title', 'Renamed')->where('write_version', 1)->count());
-        $this->assertSame(2, Page::query()->where('title', 'like', 'Original %')->where('write_version', 0)->count());
+        $winner = Page::query()->where('title', 'Renamed')->sole();
+        $this->assertSame(3, $winner->write_version);
+        $this->assertNull($winner->draft_settings);
+        $this->assertSame('contested-path', $winner->slugs()->sole()->slug);
+        $this->assertSame(2, $winner->revisions()->count());
+        $losers = Page::query()->where('title', 'like', 'Original %')->get();
+        $this->assertCount(2, $losers);
+        foreach ($losers as $loser) {
+            $this->assertSame(2, $loser->write_version);
+            $this->assertSame('published', $loser->status);
+            $this->assertStringStartsWith('original-', $loser->slugs()->sole()->slug);
+            $this->assertSame('contested-path', $loser->draft_settings->slugs->en);
+            $this->assertSame(1, $loser->revisions()->count());
+        }
         $this->assertSame(1, DB::table('site_builder_page_redirects')->count());
         $this->assertSame(3, DB::table('site_builder_page_slugs')->count());
     }

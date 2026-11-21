@@ -86,8 +86,8 @@ final class LegacyRows
             if (isset($input['columns'][$legacyTable])) {
                 $columns = array_map(fn (mixed $column): string => is_array($column) ? $column['Field'] : $column, $input['columns'][$legacyTable]);
                 $nativeOnly = match ($kind) {
-                    'pages' => ['write_version', 'published_from_version'],
-                    'revisions' => ['scope', 'origin', 'published_from_version', 'created_by_type'],
+                    'pages' => ['write_version', 'published_from_version', 'draft_settings'],
+                    'revisions' => ['scope', 'origin', 'published_from_version', 'created_by_type', 'settings_snapshot'],
                     'settings' => ['namespace', 'revision'],
                     'menus' => ['revision'],
                     default => [],
@@ -145,17 +145,23 @@ final class LegacyRows
             }
             $result[self::TABLES[$kind] ?? $this->schema->table($kind)['table']] = array_map(function (array $row) use ($kind): array {
                 if ($kind === 'pages') {
+                    if ($row['draft_settings'] !== null || $row['status'] === 'trashed') {
+                        throw new InvalidArgumentException('Page trash and staged settings require a native backup.');
+                    }
                     foreach (['draft_content', 'published_content'] as $column) {
                         $row[$column] = $row[$column] === null ? null : $this->documents->encode($this->codec->decode($row[$column]));
                     }
-                    unset($row['write_version'], $row['published_from_version']);
+                    unset($row['write_version'], $row['published_from_version'], $row['draft_settings']);
                 } elseif ($kind === 'revisions') {
+                    if ($row['settings_snapshot'] !== null) {
+                        throw new InvalidArgumentException('Page settings history requires a native backup.');
+                    }
                     $author = (string) $row['created_by'];
                     if ((($row['created_by_type'] ?? null) !== null && $row['created_by_type'] !== $this->legacyActorType) || ($row['created_by'] !== null && (! preg_match('/^(0|[1-9][0-9]{0,19})$/D', $author) || (strlen($author) === 20 && strcmp($author, '18446744073709551615') > 0)))) {
                         throw new InvalidArgumentException('Opaque or model-scoped authorship has no lossless legacy representation. Review an explicit rollback mapping.');
                     }
                     $row['content'] = $row['content'] === null ? null : $this->documents->encode($this->codec->decode($row['content']));
-                    unset($row['scope'], $row['origin'], $row['published_from_version'], $row['created_by_type']);
+                    unset($row['scope'], $row['origin'], $row['published_from_version'], $row['created_by_type'], $row['settings_snapshot']);
                 } elseif ($kind === 'settings') {
                     if ($row['namespace'] !== 'site') {
                         throw new InvalidArgumentException('An additional settings namespace has no legacy table representation.');

@@ -163,7 +163,11 @@ final class SitePartExchange
             foreach (['draft_content', 'published_content'] as $column) {
                 if (($row[$column] ?? null) !== null) {
                     try {
-                        $add('/tables/pages/'.$row['id'].'/'.$column, app(DocumentCodec::class)->decode($row[$column]), $row['layout'] ?? null);
+                        $layout = $row['layout'] ?? null;
+                        if ($column === 'draft_content' && isset($row['draft_settings'])) {
+                            $layout = json_decode($row['draft_settings'], flags: JSON_THROW_ON_ERROR)->layout;
+                        }
+                        $add('/tables/pages/'.$row['id'].'/'.$column, app(DocumentCodec::class)->decode($row[$column]), $layout);
                     } catch (Throwable) {
                         $issue('invalid_composition_owner', '/tables/pages/'.$row['id'].'/'.$column, 'A composition owner requires a valid bounded document.');
                     }
@@ -174,7 +178,8 @@ final class SitePartExchange
             foreach ($tables[$kind] ?? [] as $row) {
                 if (($row[$column] ?? null) !== null) {
                     try {
-                        $add('/tables/'.$kind.'/'.$row['id'].'/'.$column, app(DocumentCodec::class)->decode($row[$column]), detached: $kind === 'saved_section_versions');
+                        $layout = isset($row['settings_snapshot']) ? json_decode($row['settings_snapshot'], flags: JSON_THROW_ON_ERROR)->layout : null;
+                        $add('/tables/'.$kind.'/'.$row['id'].'/'.$column, app(DocumentCodec::class)->decode($row[$column]), $layout, detached: $kind === 'saved_section_versions');
                     } catch (Throwable) {
                         $issue('invalid_composition_owner', '/tables/'.$kind.'/'.$row['id'].'/'.$column, 'Retained content requires a valid bounded document.');
                     }

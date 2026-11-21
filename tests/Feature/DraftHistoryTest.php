@@ -84,7 +84,7 @@ class DraftHistoryTest extends DatabaseTestCase
         }
     }
 
-    public function test_adjacent_undo_redo_branch_and_shared_metadata_have_independent_monotonic_versions(): void
+    public function test_adjacent_undo_redo_branch_and_staged_metadata_have_independent_monotonic_versions(): void
     {
         [$page, $token, $session] = $this->opened();
         $first = $this->edit($page, $token, $session, $this->doc('One'));
@@ -96,8 +96,10 @@ class DraftHistoryTest extends DatabaseTestCase
         $this->assertSame(2, $metaSession->status['undoCount']);
         $undo = $this->history->undo($this->actor, $page->id, $token, 3, $metaSession->context);
         $this->assertSame(4, $undo->mutation->page->write_version);
-        $this->assertSame('Shared title', $undo->mutation->page->title);
-        $this->assertSame('new-url', $page->slugs()->firstOrFail()->slug);
+        $this->assertSame('Shared title', $undo->mutation->page->draftView()->title);
+        $this->assertSame($page->title, $undo->mutation->page->title);
+        $this->assertSame('new-url', $undo->mutation->page->draftView()->slugs->sole()->slug);
+        $this->assertCount(0, $page->slugs);
         $this->assertTrue(app(CanonicalJson::class)->equals($this->doc('One'), $undo->mutation->page->draft_content));
         $this->assertTrue(app(CanonicalJson::class)->equals($this->doc('Public'), $page->fresh()->published_content));
         $redo = $this->history->redo($this->actor, $page->id, $token, 4, $undo->history->context);

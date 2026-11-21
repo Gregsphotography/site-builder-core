@@ -17,10 +17,18 @@ final class Seo
     public function forPage(Page $page, RenderContext $context, RenderResult $render): array
     {
         $locale = $context->locale;
-        $title = data_get($page->seo, $locale.'.meta_title') ?: $page->title;
         if ($context->mode === 'preview') {
-            return ['title' => $title, 'robots' => 'noindex, nofollow', 'preview' => true];
+            return ['title' => data_get($page->seo, $locale.'.meta_title') ?: $page->title, 'robots' => 'noindex, nofollow', 'preview' => true];
         }
+        $metadata = $this->metadata($page, $locale);
+
+        return $metadata + ['alternates' => $this->urls->alternates($page), 'preview' => false, 'graph' => $this->graph($page, $locale, $metadata['canonical'], $metadata['title'], $render->structuredData)];
+    }
+
+    /** Resolved search and social values for public output and editorial review. */
+    public function metadata(Page $page, string $locale): array
+    {
+        $title = data_get($page->seo, $locale.'.meta_title') ?: $page->title;
         $canonical = data_get($page->seo, $locale.'.canonical');
         $canonical = is_string($canonical) && $canonical !== '' && $this->safeUrls->canonical($canonical) ? url($canonical) : $this->urls->url($page, $locale);
         $image = data_get($page->seo, $locale.'.og_image');
@@ -28,7 +36,7 @@ final class Seo
         $image = $image !== null && $this->safeUrls->valid($image, true) ? url($image) : null;
         $robots = array_filter([data_get($page->seo, $locale.'.noindex') ? 'noindex' : null, data_get($page->seo, $locale.'.nofollow') ? 'nofollow' : null]);
 
-        return ['title' => $title, 'description' => data_get($page->seo, $locale.'.meta_description'), 'canonical' => $canonical, 'alternates' => $this->urls->alternates($page), 'robots' => implode(', ', $robots), 'image' => $image, 'preview' => false, 'graph' => $this->graph($page, $locale, $canonical, $title, $render->structuredData)];
+        return ['title' => $title, 'description' => data_get($page->seo, $locale.'.meta_description'), 'canonical' => $canonical, 'robots' => implode(', ', $robots), 'image' => $image];
     }
 
     private function graph(Page $page, string $locale, ?string $canonical, string $title, array $contributions): array
@@ -54,9 +62,7 @@ final class Seo
         }
         if ($page->published_at !== null) {
             $webPage['datePublished'] = $page->published_at->toAtomString();
-        }
-        if ($page->updated_at !== null) {
-            $webPage['dateModified'] = $page->updated_at->toAtomString();
+            $webPage['dateModified'] = $page->published_at->toAtomString();
         }
         $graph = [$organization, ['@type' => 'WebSite', '@id' => $root.'#website', 'url' => $root, 'name' => $site->get('name', config('app.name')), 'inLanguage' => $locale, 'publisher' => ['@id' => $root.'#organization']], $webPage];
         $faq = [];

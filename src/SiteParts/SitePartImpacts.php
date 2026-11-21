@@ -29,7 +29,7 @@ final class SitePartImpacts
 
                     continue;
                 }
-                $entry = $targets[$page->id] ?? ['pageId' => $page->id, 'title' => $page->title, 'writeVersion' => $page->write_version, 'draftDigest' => $this->json->digest($page->draft_content), 'layout' => $page->layout, 'scopes' => [], 'canStage' => false, 'leaseHeld' => $page->editLock()->where('expires_at', '>', now())->exists()];
+                $entry = $targets[$page->id] ?? ['pageId' => $page->id, 'title' => $page->title, 'writeVersion' => $page->write_version, 'draftDigest' => $this->json->digest($page->draft_content), 'layout' => $page->draftLayout(), 'scopes' => [], 'canStage' => false, 'leaseHeld' => $page->editLock()->where('expires_at', '>', now())->exists()];
                 $entry['scopes'] = array_values(array_unique([...$entry['scopes'], $use['scope']]));
                 $entry['canStage'] = $entry['canStage'] || ($use['scope'] === 'draft' && $this->gate->forUser($actor)->allows('update', $page));
                 $targets[$page->id] = $entry;

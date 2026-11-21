@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use SiteBuilder\Core\Content\CanonicalJson;
 use SiteBuilder\Core\Models\Page;
+use SiteBuilder\Core\Publishing\ClientReviewController;
 use SiteBuilder\Core\Rendering\LayoutRegistry;
 use SiteBuilder\Core\Routing\PageController;
 use SiteBuilder\Core\Routing\PreviewController;
@@ -72,13 +73,16 @@ final class SetupInspection
         $schema = [];
         try {
             $builder = DB::connection()->getSchemaBuilder();
-            foreach (['core' => ['pages', 'page_slugs', 'page_redirects', 'page_revisions', 'page_locks', 'settings', 'menus', 'import_runs', 'import_map'], 'media' => ['media_assets'], 'saved' => ['saved_sections', 'saved_section_versions'], 'clipboard' => ['clipboard_owners', 'clipboard_snapshots'], 'history' => ['draft_histories'], 'site-parts' => ['site_parts', 'site_part_revisions', 'site_part_locks', 'content_dependencies']] as $feature => $tables) {
+            foreach (['core' => ['pages', 'page_slugs', 'page_redirects', 'route_locks', 'missing_paths', 'page_reviews', 'page_revisions', 'page_locks', 'settings', 'menus', 'import_runs', 'import_map'], 'media' => ['media_assets'], 'saved' => ['saved_sections', 'saved_section_versions'], 'clipboard' => ['clipboard_owners', 'clipboard_snapshots'], 'history' => ['draft_histories'], 'site-parts' => ['site_parts', 'site_part_revisions', 'site_part_locks', 'content_dependencies']] as $feature => $tables) {
                 foreach ($tables as $table) {
                     $name = 'site_builder_'.$table;
                     $schema['tables'][$name] = $builder->hasTable($name) ? $builder->getColumnListing($name) : null;
                 }
                 $schema[$feature] = array_all($tables, fn ($table) => $schema['tables']['site_builder_'.$table] !== null);
             }
+            $schema['core'] = $schema['core']
+                && in_array('draft_settings', $schema['tables']['site_builder_pages'], true)
+                && in_array('settings_snapshot', $schema['tables']['site_builder_page_revisions'], true);
             $schema['migrations'] = $builder->hasTable(config('database.migrations.table', 'migrations')) ? DB::table(config('database.migrations.table', 'migrations'))->orderBy('migration')->pluck('migration')->all() : [];
             $schema['available'] = true;
         } catch (\Throwable) {
@@ -135,9 +139,16 @@ final class SetupInspection
 
     public function builderRoute(array $route): bool
     {
-        $controller = ['site-builder.page' => PageController::class, 'site-builder.preview' => PreviewController::class][$route['name'] ?? ''] ?? null;
+        $actions = match ($route['name'] ?? null) {
+            'site-builder.page' => [PageController::class, PageController::class.'@__invoke'],
+            'site-builder.preview' => [PreviewController::class, PreviewController::class.'@__invoke'],
+            'site-builder.review' => [ClientReviewController::class.'@show'],
+            'site-builder.review.decide' => [ClientReviewController::class.'@decide'],
+            'site-builder.review.preview' => [ClientReviewController::class.'@preview'],
+            default => [],
+        };
 
-        return $controller !== null && in_array($route['action'] ?? null, [$controller, $controller.'@__invoke'], true);
+        return in_array($route['action'] ?? null, $actions, true);
     }
 
     public function matchesAssets(string $source, string $destination): bool

@@ -136,7 +136,7 @@ final class PageCompositionCommands
             $diagnostics = [['code' => 'incompatible_composition', 'path' => '/composition', 'message' => $exception->getMessage()]];
         }
 
-        return ['compatible' => $compatible, 'blocking' => ! $compatible, 'diagnostics' => array_map(fn ($diagnostic) => is_array($diagnostic) ? $diagnostic : ['code' => $diagnostic->code, 'path' => $diagnostic->path, 'message' => $diagnostic->message], $diagnostics), 'writeVersion' => $page->write_version, 'draftDigest' => $this->json->digest($page->draft_content), 'layout' => $page->layout];
+        return ['compatible' => $compatible, 'blocking' => ! $compatible, 'diagnostics' => array_map(fn ($diagnostic) => is_array($diagnostic) ? $diagnostic : ['code' => $diagnostic->code, 'path' => $diagnostic->path, 'message' => $diagnostic->message], $diagnostics), 'writeVersion' => $page->write_version, 'draftDigest' => $this->json->digest($page->draft_content), 'layout' => $page->draftLayout()];
     }
 
     private function mutate(Authenticatable $actor, int $pageId, string $lease, int $version, ?HistoryContext $history, callable $operation): MutationResult
@@ -163,7 +163,7 @@ final class PageCompositionCommands
 
     private function context(Page $page): RenderContext
     {
-        return new RenderContext(config('app.locale', 'en'), 'preview', $page->id, $page->layout);
+        return new RenderContext(config('app.locale', 'en'), 'preview', $page->id, $page->draftLayout());
     }
 
     private function binding(Document $document, string $binding, ?PublishedPartReference $reference): Document

@@ -15,7 +15,7 @@ final class PreviewController
 {
     public function __invoke(Request $request, string $page, string $locale, PageResponse $response, LocaleCatalog $locales): Response
     {
-        $epoch = (string) config('site-builder.preview.epoch', '1');
+        $epoch = PreviewLinks::epoch();
         if ($epoch === '' || ! is_string($request->query('epoch')) || ! hash_equals($epoch, $request->query('epoch')) || ! $request->query('expires') || ! $request->hasValidRelativeSignature()) {
             return response('Invalid or expired preview.', 403, PageResponse::privateHeaders());
         }

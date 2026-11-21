@@ -69,7 +69,7 @@ final class DesignCommands
 
     private function context(Page $page): RenderContext
     {
-        return new RenderContext(config('app.locale', 'en'), 'preview', $page->id, $page->layout);
+        return new RenderContext(config('app.locale', 'en'), 'preview', $page->id, $page->draftLayout());
     }
 
     private function mutate(Authenticatable $actor, int $pageId, string $token, int $version, callable $operation, ?HistoryContext $history = null): MutationResult

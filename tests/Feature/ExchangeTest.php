@@ -17,6 +17,7 @@ use SiteBuilder\Core\Exchange\ExchangeSchema;
 use SiteBuilder\Core\Exchange\LegacyDocuments;
 use SiteBuilder\Core\Exchange\LegacyRows;
 use SiteBuilder\Core\Exchange\Snapshot;
+use SiteBuilder\Core\Models\Page;
 use SiteBuilder\Core\Tests\DatabaseTestCase;
 use SiteBuilder\Core\Tests\Fixtures\RenderBlock;
 
@@ -50,6 +51,28 @@ class ExchangeTest extends DatabaseTestCase
     private function codes(array $report): array
     {
         return array_column($report['diagnostics'], 'code');
+    }
+
+    public function test_native_backup_retains_staged_and_historical_settings(): void
+    {
+        $legacy = $this->snapshot();
+        $tables = $legacy->tables();
+        $settings = ['title' => 'New draft', 'type' => 'page', 'layout' => null, 'seo' => null, 'schema' => null, 'data' => null, 'slugs' => ['en' => 'draft-url']];
+        $tables['pages'][0]['draft_settings'] = json_encode($settings, JSON_THROW_ON_ERROR);
+        $tables['revisions'][0]['settings_snapshot'] = json_encode([...$settings, 'title' => 'Earlier revision'], JSON_THROW_ON_ERROR);
+        $snapshot = Snapshot::decode((new Snapshot($legacy->source(), $tables))->encode());
+        $exchange = app(Exchange::class);
+        $report = $exchange->import($snapshot, DB::connection());
+        $this->assertSame('imported', $report['status'], json_encode($report['diagnostics']));
+        $page = Page::findOrFail(7);
+        $this->assertSame('Stored title', $page->title);
+        $this->assertSame('New draft', $page->draftView()->title);
+        $this->assertSame('draft-url', $page->draftView()->slugs->sole()->slug);
+        $this->assertSame('Earlier revision', $page->revisions()->sole()->settings_snapshot->title);
+        $backup = $exchange->export(DB::connection(), 'backup');
+        $this->assertJsonStringEqualsJsonString($snapshot->tables()['pages'][0]['draft_settings'], $backup->tables()['pages'][0]['draft_settings']);
+        $this->expectException(InvalidArgumentException::class);
+        app(LegacyRows::class)->reverse($backup);
     }
 
     public function test_dry_run_import_repeat_and_native_export_preserve_rows_and_provenance(): void
@@ -165,14 +188,32 @@ class ExchangeTest extends DatabaseTestCase
         DB::statement('DROP TRIGGER reject_revision');
     }
 
-    public function test_native_export_imports_into_a_fresh_database_without_a_legacy_package(): void
+    public function test_native_export_imports_into_a_fresh_database_with_inactive_locale_history(): void
     {
         $exchange = app(Exchange::class);
         $exchange->import($this->snapshot(), DB::connection());
+        $page = Page::findOrFail(7);
+        $page->slugs()->create(['locale' => 'de', 'slug' => 'beispiel']);
+        $page->redirects()->create(['locale' => 'de', 'from_slug' => 'alt', 'status' => 301]);
+        $history = $page->publishedSettings();
+        $history->slugs->de = 'alt';
+        $page->revisions()->sole()->forceFill(['settings_snapshot' => $history])->save();
+        $draft = $page->publishedSettings();
+        $draft->slugs->de = 'entwurf';
+        $page->forceFill(['draft_settings' => $draft])->save();
+        config(['site-builder.locales' => ['en' => []]]);
         $export = $exchange->export(DB::connection(), 'native-source');
         config(['database.connections.exchange_copy' => ['driver' => 'sqlite', 'database' => ':memory:', 'foreign_key_constraints' => true]]);
         $this->artisan('migrate', $this->migrationOptions() + ['--database' => 'exchange_copy'])->assertExitCode(0);
         $copy = DB::connection('exchange_copy');
+        foreach ([['bad/code' => 'alt'], ['de' => '../alt']] as $invalidUrls) {
+            $invalid = clone $history;
+            $invalid->slugs = (object) $invalidUrls;
+            $tables = $export->tables();
+            $tables['revisions'][0]['settings_snapshot'] = json_encode($invalid, JSON_THROW_ON_ERROR);
+            $report = $exchange->plan(new Snapshot($export->source(), $tables), $copy);
+            $this->assertContains('invalid_settings_snapshot', $this->codes($report));
+        }
         $report = $exchange->import(Snapshot::decode($export->encode()), $copy);
         $this->assertSame('imported', $report['status'], json_encode($report['diagnostics']));
         foreach ($export->tables() as $kind => $rows) {

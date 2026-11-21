@@ -24,10 +24,10 @@ final class ExchangeSchema
 
     public function __construct(private CanonicalJson $json)
     {
-        $this->register('pages', 'site_builder_pages', ['id', 'title', 'type', 'status', 'layout', 'draft_content', 'published_content', 'seo', 'schema', 'data', 'published_at', 'write_version', 'published_from_version', 'created_at', 'updated_at'], ['draft_content', 'published_content', 'seo', 'schema', 'data'], ['id', 'write_version', 'published_from_version']);
+        $this->register('pages', 'site_builder_pages', ['id', 'title', 'type', 'status', 'layout', 'draft_content', 'draft_settings', 'published_content', 'seo', 'schema', 'data', 'published_at', 'write_version', 'published_from_version', 'created_at', 'updated_at'], ['draft_content', 'draft_settings', 'published_content', 'seo', 'schema', 'data'], ['id', 'write_version', 'published_from_version']);
         $this->register('slugs', 'site_builder_page_slugs', ['id', 'page_id', 'locale', 'slug', 'created_at', 'updated_at'], [], ['id', 'page_id'], [['locale', 'slug'], ['page_id', 'locale']]);
         $this->register('redirects', 'site_builder_page_redirects', ['id', 'locale', 'from_slug', 'page_id', 'status', 'created_at', 'updated_at'], [], ['id', 'page_id', 'status'], [['locale', 'from_slug']]);
-        $this->register('revisions', 'site_builder_page_revisions', ['id', 'page_id', 'scope', 'content', 'created_by', 'created_by_type', 'label', 'created_at', 'published_from_version', 'origin'], ['content'], ['id', 'page_id', 'published_from_version']);
+        $this->register('revisions', 'site_builder_page_revisions', ['id', 'page_id', 'scope', 'content', 'settings_snapshot', 'created_by', 'created_by_type', 'label', 'created_at', 'published_from_version', 'origin'], ['content', 'settings_snapshot'], ['id', 'page_id', 'published_from_version']);
         $this->register('settings', 'site_builder_settings', ['id', 'namespace', 'data', 'revision', 'created_at', 'updated_at'], ['data'], ['id', 'revision'], [['namespace']]);
         $this->register('menus', 'site_builder_menus', ['id', 'location', 'items', 'revision', 'created_at', 'updated_at'], ['items'], ['id', 'revision'], [['location']]);
     }
@@ -153,6 +153,12 @@ final class ExchangeSchema
     public function digest(string $kind, array $row): string
     {
         $row = $this->normalize($kind, $row);
+        if ($kind === 'pages' && ($row['draft_settings'] ?? null) === null) {
+            unset($row['draft_settings']);
+        }
+        if ($kind === 'revisions' && ($row['settings_snapshot'] ?? null) === null) {
+            unset($row['settings_snapshot']);
+        }
         // v1 had no discriminator; an unknown legacy author remains precisely the
         // same historical fact and digest after the additive schema migration.
         if ($kind === 'revisions' && ($row['created_by_type'] ?? null) === null) {

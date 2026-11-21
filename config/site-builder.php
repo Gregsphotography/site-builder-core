@@ -2,7 +2,9 @@
 
 return [
     'discovery' => ['enabled' => false, 'results_page' => null],
+    'missing_paths' => ['enabled' => true, 'retention_days' => 30, 'max_paths' => 1000],
     'locales' => ['en' => ['label' => 'English', 'dir' => 'ltr']],
+    'language_switcher' => true,
     'layout' => 'site-builder::layouts.site',
     'routes' => ['enabled' => true, 'prefix' => '', 'middleware' => ['web'], 'public' => true, 'preview' => true, 'preview_prefix' => '_site-builder/preview'],
     'assets' => ['public_css' => true],

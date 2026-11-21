@@ -223,7 +223,7 @@ final class CompositionResolver
                     }
                     $mountedNodes = $mount(PublishedPartReference::from($node->props->get('revision')), 'section', $ancestry, [...$chain, 'node:'.$node->id], $depth, $structuralDepth, $selectable ?? $node->id, $binding, $designAncestors);
                     if ($node->visibility === 'hidden') {
-                        $mountedNodes = array_map(fn ($entry) => new CompositionRenderNode($entry->node, $entry->document, $entry->children, $entry->address, $entry->selectableId, $entry->binding, $entry->mounted, true, $entry->presentationOwner, $entry->ancestors), $mountedNodes);
+                        $mountedNodes = array_map(fn ($entry) => new CompositionRenderNode($entry->node, $entry->document, $entry->children, $entry->address, $entry->selectableId, $entry->binding, $entry->mounted, true, $entry->presentationOwner, $entry->ancestors, $entry->sourcePartId), $mountedNodes);
                     }
                     $result = [...$result, ...$mountedNodes];
 
@@ -265,7 +265,7 @@ final class CompositionResolver
                     }
                 }
                 $address = hash('sha256', json_encode([$context->pageId, $chain, $node->id], JSON_THROW_ON_ERROR));
-                $result[] = new CompositionRenderNode($node, $source, $children, $address, $mounted ? $selectable : $node->id, $binding, $mounted, false, $mounted ? $document : null, $mounted ? $designAncestors : []);
+                $result[] = new CompositionRenderNode($node, $source, $children, $address, $mounted ? $selectable : $node->id, $binding, $mounted, false, $mounted ? $document : null, $mounted ? $designAncestors : [], $mounted ? $ancestry[array_key_last($ancestry)] : null);
             }
 
             return $result;

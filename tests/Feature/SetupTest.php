@@ -293,6 +293,14 @@ class SetupTest extends DatabaseTestCase
         $this->assertSame([], $this->fingerprint());
     }
 
+    public function test_host_route_with_a_reserved_review_name_is_still_a_conflict(): void
+    {
+        Route::get('elsewhere', fn () => 'host')->name('site-builder.review');
+        $plan = app(SetupManager::class)->plan($this->answers());
+        $this->assertSame('blocked', $plan->report['status']);
+        $this->assertContains('route-conflict', array_map(fn ($check) => $check->code, $plan->report['checks']));
+    }
+
     public function test_doctor_checks_actual_cached_route_registration_and_explicit_disabling(): void
     {
         $manager = app(SetupManager::class);

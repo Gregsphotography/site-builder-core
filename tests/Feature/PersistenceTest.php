@@ -25,6 +25,7 @@ use SiteBuilder\Core\Exceptions\InvalidDocument;
 use SiteBuilder\Core\Exceptions\WriteConflict;
 use SiteBuilder\Core\Exchange\Exchange;
 use SiteBuilder\Core\Exchange\ExchangeSchema;
+use SiteBuilder\Core\Exchange\LegacyRows;
 use SiteBuilder\Core\Exchange\Snapshot;
 use SiteBuilder\Core\Models\Page;
 use SiteBuilder\Core\Models\PageLock;
@@ -33,6 +34,7 @@ use SiteBuilder\Core\Models\PageSlug;
 use SiteBuilder\Core\Persistence\PageCommands;
 use SiteBuilder\Core\Persistence\PageHistory;
 use SiteBuilder\Core\Persistence\PageLocks;
+use SiteBuilder\Core\Routing\PreviewLinks;
 use SiteBuilder\Core\Tests\DatabaseTestCase;
 use SiteBuilder\Core\Tests\Fixtures\RenderBlock;
 
@@ -86,7 +88,7 @@ class PersistenceTest extends DatabaseTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        config(['site-builder.locales' => ['en' => [], 'de' => []]]);
+        config(['site-builder.locales' => ['en' => [], 'de' => []], 'app.key' => 'base64:'.base64_encode(str_repeat('c', 32))]);
         app(ComponentRegistry::class)->register(RenderBlock::class);
         view()->addNamespace('test-blocks', __DIR__.'/../Fixtures/views');
         foreach (['view', 'create', 'update', 'publish', 'restore', 'delete', 'preview'] as $ability) {
@@ -133,25 +135,112 @@ class PersistenceTest extends DatabaseTestCase
         $this->assertNotNull($revision->created_at);
         $this->assertSame(1, $revision->published_from_version);
         $this->assertSame('native', $revision->origin);
-        $timestamp = $published->page->published_at;
+        $liveHtml = $this->get('/')->assertOk()->getContent();
+        $this->travel(1)->minutes();
         $draft = $this->commands->saveDraft($this->actor, $page->id, $lease->token, 2, $this->document('Unpublished changes'));
         $this->assertTrue(app(CanonicalJson::class)->equals($this->document('First'), $draft->page->published_content));
-        $meta = $this->commands->saveMetadata($this->actor, $page->id, $lease->token, 3, ['title' => 'Live shared metadata', 'seo' => (object) ['en' => (object) ['nofollow' => true]], 'data' => (object) ['list' => [], 'empty' => (object) []]], ['en' => 'new-home']);
+        $settings = ['title' => 'Revised title', 'seo' => (object) ['en' => (object) ['meta_title' => 'New search title', 'nofollow' => true]], 'data' => (object) ['list' => [], 'empty' => (object) []]];
+        $meta = $this->commands->saveMetadata($this->actor, $page->id, $lease->token, 3, $settings, ['en' => 'new-home', 'de' => null]);
         $this->assertSame(4, $meta->page->write_version);
-        $this->assertSame('home', $meta->page->redirects()->first()->from_slug);
-        $this->assertSame('Live shared metadata', $meta->page->title);
-        $restored = $this->commands->restore($this->actor, $page->id, $lease->token, 4, $revision->id);
-        $this->assertSame(5, $restored->page->write_version);
-        $this->assertSame('Live shared metadata', $restored->page->title);
-        $this->assertEquals($timestamp, $restored->page->published_at);
+        $this->assertSame('Original', $meta->page->title);
+        $this->assertSame('Revised title', $meta->page->draftView()->title);
+        $this->assertSame(0, $page->redirects()->count());
+        $this->assertSame($liveHtml, $this->get('/')->assertOk()->getContent());
+        $this->get('/de/start')->assertOk();
+        $this->get('/new-home')->assertNotFound();
+        $preview = app(PreviewLinks::class)->create($this->actor, $page->id, 'en');
+        $this->get($preview)->assertOk()->assertSee('New search title')->assertSee('Unpublished changes');
+        $noop = $this->commands->saveMetadata($this->actor, $page->id, $lease->token, 4, $settings, ['en' => 'new-home']);
+        $this->assertSame(4, $noop->page->write_version);
+        $next = $this->commands->publish($this->actor, $page->id, $lease->token, 4, $noop->draftDigest);
+        $this->assertSame('Revised title', $next->page->title);
+        $this->assertNull($next->page->draft_settings);
+        $this->assertSame(['en' => 'new-home'], (array) $next->page->revisions()->firstOrFail()->settings_snapshot->slugs);
+        $this->get('/')->assertRedirect('/new-home');
+        $this->get('/de/start')->assertNotFound();
+        $this->get('/new-home')->assertOk()->assertSee('New search title')->assertSee('Unpublished changes');
+
+        $restored = $this->commands->restore($this->actor, $page->id, $lease->token, 5, $revision->id);
+        $this->assertSame('Revised title', $restored->page->title);
+        $this->assertSame('Original', $restored->page->draftView()->title);
+        $this->assertEquals($next->page->published_at, $restored->page->published_at);
         $this->assertSame($first->draftDigest, $restored->draftDigest);
-        $this->assertCount(1, $restored->page->revisions);
-        $unpublished = $this->commands->unpublish($this->actor, $page->id, $lease->token, 5);
-        $this->assertSame(6, $unpublished->page->write_version);
+        $this->assertCount(2, $restored->page->revisions);
+        $this->get('/new-home')->assertOk()->assertSee('New search title');
+        $this->commands->publish($this->actor, $page->id, $lease->token, 6, $restored->draftDigest);
+        $this->get('/new-home')->assertRedirect('/');
+        $this->get('/')->assertOk()->assertSee('Original')->assertSee('First')->assertDontSee('New search title');
+        $this->get('/de/start')->assertOk();
+        $unpublished = $this->commands->unpublish($this->actor, $page->id, $lease->token, 7);
+        $this->assertSame(8, $unpublished->page->write_version);
         $this->assertSame('draft', $unpublished->page->status);
         $this->assertNull($unpublished->page->published_at);
         $this->assertTrue(app(CanonicalJson::class)->equals($unpublished->page->draft_content, $unpublished->page->published_content));
-        $this->assertCount(1, $unpublished->page->revisions);
+        $this->assertCount(3, $unpublished->page->revisions);
+    }
+
+    public function test_inactive_locale_urls_survive_editing_publication_and_revision_restoration(): void
+    {
+        $created = $this->commands->create($this->actor, ['title' => 'Original'], ['en' => 'original', 'de' => 'anfang'], $this->document('Original'));
+        $id = $created->page->id;
+        $token = $this->locks->acquire($this->actor, $id)->token;
+        $first = $this->commands->publish($this->actor, $id, $token, 0, $created->draftDigest);
+        $revision = $first->page->revisions()->sole();
+        $this->commands->saveMetadata($this->actor, $id, $token, 1, [], ['de' => 'start']);
+        $this->commands->publish($this->actor, $id, $token, 2, $created->draftDigest);
+
+        config(['site-builder.locales' => ['en' => []]]);
+        $this->get('/de/start')->assertNotFound();
+        $changed = $this->commands->saveDraft($this->actor, $id, $token, 3, $this->document('English update'));
+        $this->commands->saveMetadata($this->actor, $id, $token, 4, ['title' => 'Updated'], ['de' => 'start']);
+        foreach ([
+            fn () => $this->commands->saveMetadata($this->actor, $id, $token, 5, [], ['de' => 'neu']),
+            fn () => $this->commands->create($this->actor, ['title' => 'New'], ['de' => 'neu']),
+        ] as $write) {
+            try {
+                $write();
+                $this->fail('A new URL was authored for an inactive language.');
+            } catch (ValidationException $exception) {
+                $this->assertArrayHasKey('slugs', $exception->errors());
+            }
+        }
+        $published = $this->commands->publish($this->actor, $id, $token, 5, $changed->draftDigest);
+        $this->assertSame('start', $published->page->revisions()->firstOrFail()->settings_snapshot->slugs->de);
+        $this->get('/original')->assertOk()->assertSee('English update');
+
+        $restored = $this->commands->restore($this->actor, $id, $token, 6, $revision->id);
+        $this->assertSame('anfang', $restored->page->draft_settings->slugs->de);
+        $this->assertSame('start', $restored->page->publishedSettings()->slugs->de);
+        $this->commands->publish($this->actor, $id, $token, 7, $restored->draftDigest);
+        $this->get('/de/anfang')->assertNotFound();
+        config(['site-builder.locales' => ['en' => [], 'de' => []]]);
+        $this->get('/de/anfang')->assertOk()->assertSee('Deutsch');
+        $this->get('/de/start')->assertRedirect('/de/anfang');
+    }
+
+    public function test_conflicting_staged_url_cannot_partially_publish_and_legacy_revision_keeps_draft_settings(): void
+    {
+        $created = $this->commands->create($this->actor, ['title' => 'Original'], ['en' => 'original'], $this->document('First'));
+        $page = $created->page;
+        $token = $this->locks->acquire($this->actor, $page->id)->token;
+        $this->commands->publish($this->actor, $page->id, $token, 0, $created->draftDigest);
+        $draft = $this->commands->saveMetadata($this->actor, $page->id, $token, 1, ['title' => 'New title'], ['en' => 'contested']);
+        $this->commands->create($this->actor, ['title' => 'Another page'], ['en' => 'contested']);
+        try {
+            $this->commands->publish($this->actor, $page->id, $token, 2, $draft->draftDigest);
+            $this->fail('An occupied URL was published.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('slugs', $exception->errors());
+        }
+        $this->assertSame(2, $page->fresh()->write_version);
+        $this->assertSame(0, $page->redirects()->count());
+        $this->assertCount(1, $page->revisions);
+        $this->get('/original')->assertOk()->assertSee('Original');
+        $legacy = PageRevision::factory()->create(['page_id' => $page->id, 'content' => $this->document('Legacy content'), 'settings_snapshot' => null]);
+        $restored = $this->commands->restore($this->actor, $page->id, $token, 2, $legacy->id);
+        $this->assertSame('New title', $restored->page->draftView()->title);
+        $this->assertSame('contested', $restored->page->draftView()->slugs->sole()->slug);
+        $this->assertSame('Original', $restored->page->title);
     }
 
     public function test_out_of_order_requests_and_wrong_publish_digest_do_not_partially_write(): void
@@ -344,7 +433,7 @@ class PersistenceTest extends DatabaseTestCase
         $this->commands->publish($this->actor, $page->id, $lease->token, 1, $accepted->draftDigest);
     }
 
-    public function test_delete_runs_host_guard_and_cascades_only_after_acceptance(): void
+    public function test_trash_runs_host_guard_releases_lease_and_preserves_urls_and_history(): void
     {
         $page = $this->commands->create($this->actor, ['title' => 'Delete me'], ['en' => 'delete'])->page;
         $lease = $this->locks->acquire($this->actor, $page->id);
@@ -369,10 +458,33 @@ class PersistenceTest extends DatabaseTestCase
         }
         app('test.delete-guard')->veto = false;
         $this->commands->delete($this->actor, $page->id, $lease->token, 0);
-        $this->assertNull($page->fresh());
-        $this->assertSame(0, PageRevision::query()->count());
+        $this->assertNull(Page::find($page->id));
+        $trashed = Page::trash()->findOrFail($page->id);
+        $this->assertSame(1, $trashed->write_version);
+        $this->assertSame(1, PageRevision::query()->count());
         $this->assertSame(0, PageLock::query()->count());
-        $this->assertSame(0, $page->slugs()->count());
+        $this->assertSame('delete', $trashed->slugs()->sole()->slug);
+    }
+
+    public function test_native_backup_preserves_trashed_pages_without_republishing_them(): void
+    {
+        $page = $this->commands->create($this->actor, ['title' => 'Former announcement'], ['en' => 'former'], $this->document('An announcement'))->page;
+        $lease = $this->locks->acquire($this->actor, $page->id);
+        $this->commands->delete($this->actor, $page->id, $lease->token, $page->write_version);
+        $exchange = app(Exchange::class);
+        $backup = $exchange->export(DB::connection(), 'trash-backup');
+        config(['database.connections.trash_copy' => ['driver' => 'sqlite', 'database' => ':memory:', 'foreign_key_constraints' => true]]);
+        $this->artisan('migrate', $this->migrationOptions() + ['--database' => 'trash_copy'])->assertSuccessful();
+        try {
+            $result = $exchange->import(Snapshot::decode($backup->encode()), DB::connection('trash_copy'));
+            $this->assertSame('imported', $result['status'], json_encode($result['diagnostics']));
+            $this->assertSame('trashed', DB::connection('trash_copy')->table('site_builder_pages')->where('id', $page->id)->value('status'));
+            $this->assertSame('former', DB::connection('trash_copy')->table('site_builder_page_slugs')->where('page_id', $page->id)->value('slug'));
+            $this->expectException(\InvalidArgumentException::class);
+            app(LegacyRows::class)->reverse($backup);
+        } finally {
+            DB::purge('trash_copy');
+        }
     }
 
     public function test_history_is_authorized_page_scoped_and_cursor_ordered(): void
